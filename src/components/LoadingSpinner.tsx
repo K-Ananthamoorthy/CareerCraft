@@ -1,9 +1,23 @@
-import { Loader2 } from 'lucide-react'
+"use client"; // Add this line to mark the file as a client component
 
-export default function LoadingSpinner() {
+import React from 'react';
+
+const LoadingAnimation = () => {
   return (
-    <div className="flex items-center justify-center h-full">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    <div className="flex items-center justify-center h-screen text-white bg-gradient-to-b from-indigo-600 to-purple-800">
+      <div className="flex flex-col items-center">
+        <div className="flex space-x-2">
+          <div className="w-3 h-3 bg-white rounded-full animate-bounce"></div>
+          <div className="w-3 h-3 delay-150 bg-white rounded-full animate-bounce"></div>
+          <div className="w-3 h-3 delay-300 bg-white rounded-full animate-bounce"></div>
+        </div>
+        <h1 className="mt-4 text-xl font-semibold">Empowering Excellence in Education</h1>
+        <p className="mt-2 text-center">
+          Please wait while we prepare personalized insights for you...
+        </p>
+      </div>
     </div>
-  )
-}
+  );
+};
+
+export default LoadingAnimation;

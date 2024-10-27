@@ -1,13 +1,16 @@
-import { Metadata } from "next"
-import Link from "next/link"
-import { redirect } from 'next/navigation'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import SkillsOverview from "@/components/dashboard/SkillsOverview"
-import AssessmentScores from "@/components/dashboard/AssesmentScores"
-import { Briefcase, BookOpen } from 'lucide-react'
+import { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from 'next/navigation';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import SkillsOverview from "@/components/dashboard/SkillsOverview";
+import AssessmentScores from "@/components/dashboard/AssesmentScores";
+import { Briefcase, BookOpen } from 'lucide-react';
+import LoadingSpinner from "@/components/LoadingSpinner"; // Import the LoadingSpinner
+import { useEffect } from "react";
+import LoadingAnimation from "@/components/LoadingSpinner";
 
 export const metadata: Metadata = {
   title: "Dashboard | AI-Powered Learning Platform",
@@ -15,17 +18,22 @@ export const metadata: Metadata = {
 }
 
 export default async function DashboardPage() {
-  const cookieStore = cookies()
-  const supabase = createServerComponentClient({ cookies: () => cookieStore })
-  
-  const { data: { user } } = await supabase.auth.getUser()
+  const cookieStore = cookies();
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+
+  // Display loading state while fetching user data
+  if (!user && !error) {
+    return <LoadingSpinner />; // Show loading spinner if user is not yet fetched
+  }
 
   if (!user) {
-    redirect('/')
+    redirect('/');
   }
 
   return (
-    
     <div className="container px-4 py-6 mx-auto sm:px-6 lg:px-8">
       <h1 className="mb-6 text-3xl font-bold text-primary">Welcome to Your Engineering Dashboard</h1>
       <div className="grid gap-6 md:grid-cols-2">
@@ -75,5 +83,9 @@ export default async function DashboardPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
+function setLoading(arg0: boolean): void {
+  throw new Error("Function not implemented.");
+}
+
