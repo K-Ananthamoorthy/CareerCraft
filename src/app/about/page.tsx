@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function About() {
   return (
     <div className="container px-4 py-8 mx-auto">
-      <h1 className="mb-6 text-3xl font-bold">About AI Learning Platform</h1>
+      <h1 className="mb-6 text-3xl font-bold">About CareerCrafters Platform</h1>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Our Mission</CardTitle>
@@ -12,7 +12,7 @@ export default function About() {
         </CardHeader>
         <CardContent>
           <p className="mb-4">
-            AI Learning Platform is dedicated to providing cutting-edge education and career support for aspiring engineers. 
+           CareerCrafters  is dedicated to providing cutting-edge education and career support for aspiring engineers. 
             Our platform combines advanced AI technology with comprehensive learning resources to offer personalized learning 
             experiences and career guidance.
           </p>

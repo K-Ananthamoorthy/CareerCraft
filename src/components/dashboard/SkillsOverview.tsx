@@ -11,21 +11,23 @@ const skillsData = [
 
 export default function SkillsOverview() {
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle>Your Skills Overview</CardTitle>
+        <CardTitle className="text-xl font-semibold">Your Skills Overview</CardTitle>
         <CardDescription>Based on your assessments and activities</CardDescription>
       </CardHeader>
       <CardContent>
-        {skillsData.map((skill) => (
-          <div key={skill.skill} className="mb-4">
-            <div className="flex justify-between mb-1">
-              <span className="text-sm font-medium">{skill.skill}</span>
-              <span className="text-sm font-medium">{skill.score}%</span>
+        <div className="space-y-4">
+          {skillsData.map((skill) => (
+            <div key={skill.skill}>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm font-medium text-muted-foreground">{skill.skill}</span>
+                <span className="text-sm font-medium text-primary">{skill.score}%</span>
+              </div>
+              <Progress value={skill.score} className="h-2" />
             </div>
-            <Progress value={skill.score} className="w-full" />
-          </div>
-        ))}
+          ))}
+        </div>
       </CardContent>
     </Card>
   )

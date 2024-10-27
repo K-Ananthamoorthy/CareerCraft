@@ -1,8 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bar, BarChart, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 
 const assessmentScores = [
   { assessment: "Engineering Fundamentals", score: 85 },
@@ -14,33 +13,37 @@ const assessmentScores = [
 
 export default function AssessmentScores() {
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle>Assessment Scores</CardTitle>
+        <CardTitle className="text-xl font-semibold">Assessment Scores</CardTitle>
         <CardDescription>Your performance in recent assessments</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer
-          config={{
-            score: {
-              label: "Score",
-              color: "hsl(var(--chart-1))",
-            },
-          }}
-          className="h-[300px]"
-        >
-          <BarChart data={assessmentScores}>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={assessmentScores} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <XAxis
               dataKey="assessment"
               tickLine={false}
               axisLine={false}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
               tickFormatter={(value) => value.split(' ')[0]}
             />
-            <YAxis tickLine={false} axisLine={false} />
-            <Bar dataKey="score" fill="var(--color-score)" radius={[4, 4, 0, 0]} />
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'hsl(var(--background))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '4px',
+              }}
+              labelStyle={{ color: 'hsl(var(--foreground))' }}
+            />
+            <Bar dataKey="score" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
           </BarChart>
-        </ChartContainer>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   )

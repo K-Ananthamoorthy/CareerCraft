@@ -10,7 +10,7 @@ export default function Terms() {
         </CardHeader>
         <CardContent>
           <p>
-            By accessing or using the AI Learning Platform, you agree to be bound by these Terms of Service. 
+            By accessing or using the CareerCrafters, you agree to be bound by these Terms of Service. 
             If you do not agree to these terms, please do not use our platform.
           </p>
         </CardContent>
@@ -32,7 +32,7 @@ export default function Terms() {
         </CardHeader>
         <CardContent>
           <p>
-            The content, features, and functionality of the AI Learning Platform are owned by us and 
+            The content, features, and functionality of the  CareerCrafters are owned by us and 
             are protected by international copyright, trademark, patent, trade secret, and other 
             intellectual property laws.
           </p>
@@ -44,7 +44,7 @@ export default function Terms() {
         </CardHeader>
         <CardContent>
           <p>
-            To the fullest extent permitted by law, AI Learning Platform shall not be liable for any 
+            To the fullest extent permitted by law, CareerCrafters  shall not be liable for any 
             indirect, incidental, special, consequential, or punitive damages, or any loss of profits 
             or revenues, whether incurred directly or indirectly.
           </p>
