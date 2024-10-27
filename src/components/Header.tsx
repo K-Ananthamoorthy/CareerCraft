@@ -34,7 +34,7 @@ export default function Header() {
   return (
     <header className="bg-white shadow">
       <nav className="container flex items-center justify-between px-4 py-4 mx-auto">
-        <Link href="/" className="text-xl font-bold">
+        <Link href="#" className="text-xl font-bold">
           AI Learning Platform
         </Link>
         {isLoaded ? (
