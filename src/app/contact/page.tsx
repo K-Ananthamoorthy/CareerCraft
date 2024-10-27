@@ -91,9 +91,9 @@ export default function Contact() {
           <CardTitle>Other Ways to Reach Us</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="mb-2"><strong>Email:</strong> support@ailearningplatform.com</p>
-          <p className="mb-2"><strong>Phone:</strong> +1 (555) 123-4567</p>
-          <p><strong>Address:</strong> 123 Tech Street, Silicon Valley, CA 94000</p>
+          <p className="mb-2"><strong>Email:</strong> support@careercrafters.app</p>
+          <p className="mb-2"><strong>Phone:</strong> +91 8756453415</p>
+          <p><strong>Address:</strong> udupi Karnataka India</p>
         </CardContent>
       </Card>
     </div>
