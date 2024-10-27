@@ -51,7 +51,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-white shadow">
       <nav className="container px-4 py-4 mx-auto">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-primary">
+          <Link href="#" className="text-xl font-bold text-primary">
           CareerCrafters
           </Link>
           {isLoaded ? (

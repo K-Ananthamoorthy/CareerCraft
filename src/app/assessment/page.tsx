@@ -20,20 +20,23 @@ export default function AssessmentsPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [filteredAssessments, setFilteredAssessments] = useState<Assessment[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null) // Error state
 
   useEffect(() => {
     async function fetchAssessments() {
+      setIsLoading(true) // Set loading to true before fetching
       const { data, error } = await supabase
         .from('assessments')
         .select('*')
-      
+
       if (error) {
         console.error('Error fetching assessments:', error)
+        setError('Failed to fetch assessments. Please try again later.') // Set error message
       } else {
         setAssessments(data)
         setFilteredAssessments(data)
       }
-      setIsLoading(false)
+      setIsLoading(false) // Set loading to false after fetching
     }
 
     fetchAssessments()
@@ -66,6 +69,8 @@ export default function AssessmentsPage() {
         <div className="flex items-center justify-center h-64">
           <div className="w-32 h-32 border-t-2 border-b-2 border-gray-900 rounded-full animate-spin"></div>
         </div>
+      ) : error ? (
+        <p className="mt-8 text-center text-red-500">{error}</p> // Display error message
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredAssessments.map((assessment) => (

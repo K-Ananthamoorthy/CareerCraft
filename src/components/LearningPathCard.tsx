@@ -23,7 +23,7 @@ export default function LearningPathCard({ title, description, duration, level, 
           <span>Level: {level}</span>
         </div>
         <Button asChild className="w-full">
-          <Link href={`/learning-paths/${slug}`}>Start Learning</Link>
+          <Link href={`#${slug}`}>Start Learning</Link>
         </Button>
       </CardContent>
     </Card>
