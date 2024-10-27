@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import AssessmentPage from './AssessmentPage'
 
 async function getAssessment(id: string) {
-  const cookieStore = await cookies() // Await cookies()
+  const cookieStore = await cookies()
   const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
   const { data: assessment, error } = await supabase
@@ -51,8 +51,8 @@ async function getAssessment(id: string) {
   return { ...assessment, questions: questionsWithOptions }
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const id = (await params).id // Await `params` before accessing `id`
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params  // Await the params to resolve
   const assessment = await getAssessment(id)
 
   if (!assessment) {
