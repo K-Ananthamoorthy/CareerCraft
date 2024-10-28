@@ -17,7 +17,7 @@ export default function LoginPage() {
           <CardDescription className="text-center">Welcome back! Please log in to your account.</CardDescription>
         </CardHeader>
         <CardContent>
-          <LoginForm />
+          <LoginForm/>
           <p className="mt-4 text-sm text-center text-muted-foreground">
             Don't have an account?{' '}
             <Link href="/register" className="text-primary hover:underline">

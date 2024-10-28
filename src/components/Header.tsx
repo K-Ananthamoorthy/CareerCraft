@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClientComponentClient, User } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { useEffect, useState } from 'react'
 import { Menu, LogOut } from 'lucide-react'
@@ -12,22 +12,44 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Header() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClientComponentClient()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      setIsLoggedIn(!!user)
+      setUser(user)
       setIsLoaded(true)
     }
     checkUser()
-  }, [supabase.auth])
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') {
+        setUser(session?.user ?? null)
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        })
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+        toast({
+          title: "Signed Out",
+          description: "You have been successfully logged out.",
+        })
+      }
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
+  }, [supabase.auth, toast])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -36,7 +58,7 @@ export default function Header() {
 
   const isActive = (path: string) => pathname === path
 
-  const showFullHeader = isLoaded && isLoggedIn && !['/login', '/register', '/'].includes(pathname)
+  const showFullHeader = isLoaded && user && !['/login', '/register', '/'].includes(pathname)
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },

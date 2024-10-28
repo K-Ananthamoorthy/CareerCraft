@@ -14,7 +14,6 @@ export default function Footer() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (email) {
-      // Here you would typically send the email to your API
       console.log('Subscribing email:', email)
       toast({
         title: "Subscribed!",
@@ -31,26 +30,36 @@ export default function Footer() {
   }
 
   return (
-    <footer className="py-12 text-white bg-gradient-to-r from-blue-500 to-purple-600">
+    <footer className="py-6 text-white bg-gradient-to-r from-blue-600 to-purple-600">
       <div className="container px-4 mx-auto">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <h3 className="mb-4 text-lg font-semibold">CareerCrafters</h3>
-            <p className="text-sm text-blue-100">
-              Empowering engineering students with AI-driven learning and career guidance.
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="lg:col-span-2">
+            <h3 className="mb-2 text-lg font-semibold">CareerCrafters</h3>
+            <p className="mb-4 text-sm text-blue-100">
+              Empowering engineering students with AI-driven learning.
             </p>
+            <form onSubmit={handleSubmit} className="flex max-w-md space-x-2">
+              <Input 
+                type="email" 
+                placeholder="Your email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="text-white placeholder-blue-200 bg-white/10 border-white/20"
+              />
+              <Button type="submit" variant="secondary">Subscribe</Button>
+            </form>
           </div>
           <div>
-            <h4 className="mb-4 font-semibold text-md">Quick Links</h4>
-            <ul className="space-y-2">
-              <li><Link href="/about" className="text-sm text-blue-100 transition-colors hover:text-white">About Us</Link></li>
-              <li><Link href="/contact" className="text-sm text-blue-100 transition-colors hover:text-white">Contact</Link></li>
-              <li><Link href="/privacy" className="text-sm text-blue-100 transition-colors hover:text-white">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="text-sm text-blue-100 transition-colors hover:text-white">Terms of Service</Link></li>
-            </ul>
+            <h4 className="mb-3 text-sm font-semibold">Quick Links</h4>
+            <nav className="flex flex-col space-y-2">
+              <Link href="/about" className="text-sm text-blue-100 transition-colors hover:text-white">About Us</Link>
+              <Link href="/contact" className="text-sm text-blue-100 transition-colors hover:text-white">Contact</Link>
+              <Link href="/privacy" className="text-sm text-blue-100 transition-colors hover:text-white">Privacy Policy</Link>
+              <Link href="/terms" className="text-sm text-blue-100 transition-colors hover:text-white">Terms of Service</Link>
+            </nav>
           </div>
           <div>
-            <h4 className="mb-4 font-semibold text-md">Connect With Us</h4>
+            <h4 className="mb-3 text-sm font-semibold">Connect With Us</h4>
             <div className="flex space-x-4">
               <a href="#" className="text-blue-100 transition-colors hover:text-white" aria-label="Facebook">
                 <Facebook size={20} />
@@ -66,23 +75,8 @@ export default function Footer() {
               </a>
             </div>
           </div>
-          <div>
-            <h4 className="mb-4 font-semibold text-md">Subscribe to Our Newsletter</h4>
-            <form onSubmit={handleSubmit} className="space-y-2">
-              <Input 
-                type="email" 
-                placeholder="Your email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full text-white placeholder-blue-200 bg-white/10 border-white/20"
-              />
-              <Button type="submit" className="w-full text-blue-600 bg-white hover:bg-blue-100">
-                Subscribe
-              </Button>
-            </form>
-          </div>
         </div>
-        <div className="pt-8 mt-8 text-center border-t border-white/20">
+        <div className="pt-4 mt-6 text-center border-t border-white/20">
           <p className="text-sm text-blue-100">&copy; {new Date().getFullYear()} CareerCrafters. All rights reserved.</p>
         </div>
       </div>

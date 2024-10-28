@@ -133,13 +133,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="py-8 bg-muted">
-        <div className="container mx-auto text-center">
-          <p className="text-muted-foreground">
-            &copy; 2024 AI-Powered Student Learning Platform. All rights reserved.
-          </p>
-        </div>
-      </footer>
+
     </div>
   );
 }
