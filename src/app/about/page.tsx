@@ -1,7 +1,30 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import LoadingSpinner from '@/components/LoadingSpinner' // Import the loading spinner
 
 export default function About() {
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Simulate loading time (e.g., fetching data)
+    const timer = setTimeout(() => {
+      setIsLoading(false) // Set loading to false after data is loaded
+    }, 1000) // Adjust the time as necessary (1 second for demo)
+
+    return () => clearTimeout(timer) // Cleanup the timer on unmount
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <LoadingSpinner /> {/* Use your loading spinner here */}
+      </div>
+    )
+  }
+
   return (
     <div className="container px-4 py-8 mx-auto">
       <h1 className="mb-6 text-3xl font-bold">About CareerCrafters Platform</h1>
@@ -12,12 +35,12 @@ export default function About() {
         </CardHeader>
         <CardContent>
           <p className="mb-4">
-           CareerCrafters  is dedicated to providing cutting-edge education and career support for aspiring engineers. 
-            Our platform combines advanced AI technology with comprehensive learning resources to offer personalized learning 
+            CareerCrafters is dedicated to providing cutting-edge education and career support for aspiring engineers.
+            Our platform combines advanced AI technology with comprehensive learning resources to offer personalized learning
             experiences and career guidance.
           </p>
           <p>
-            We strive to bridge the gap between academic knowledge and industry requirements, ensuring our students are 
+            We strive to bridge the gap between academic knowledge and industry requirements, ensuring our students are
             well-prepared for the challenges of the modern tech industry.
           </p>
         </CardContent>

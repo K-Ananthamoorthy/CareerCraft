@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import LoadingSpinner from '@/components/LoadingSpinner' // Import the loading spinner
 
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -17,7 +18,7 @@ export default function Contact() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setIsSubmitting(true)
+    setIsSubmitting(true) // Set loading state to true when starting the submission
 
     const formData = new FormData(event.currentTarget)
     const firstName = formData.get('first-name') as string
@@ -49,7 +50,7 @@ export default function Contact() {
         variant: "destructive",
       })
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false) // Set loading state to false when submission is complete
     }
   }
 
@@ -81,7 +82,14 @@ export default function Contact() {
               <Textarea id="message" name="message" placeholder="Enter your message" required />
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Sending...' : 'Send Message'}
+              {isSubmitting ? (
+                <div className="flex items-center justify-center">
+                  <LoadingSpinner /> {/* Show loading spinner */}
+                  <span className="ml-2">Sending...</span>
+                </div>
+              ) : (
+                'Send Message'
+              )}
             </Button>
           </form>
         </CardContent>
@@ -93,7 +101,7 @@ export default function Contact() {
         <CardContent>
           <p className="mb-2"><strong>Email:</strong> support@careercrafters.app</p>
           <p className="mb-2"><strong>Phone:</strong> +91 8756453415</p>
-          <p><strong>Address:</strong> udupi Karnataka India</p>
+          <p><strong>Address:</strong> Udupi, Karnataka, India</p>
         </CardContent>
       </Card>
     </div>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { supabase } from '@/lib/supabase/client'
+import LoadingSpinner from '@/components/LoadingSpinner' // Import the loading spinner
 
 interface Assessment {
   id: string
@@ -67,7 +68,7 @@ export default function AssessmentsPage() {
       </div>
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="w-32 h-32 border-t-2 border-b-2 border-gray-900 rounded-full animate-spin"></div>
+          <LoadingSpinner /> {/* Use the loading spinner component here */}
         </div>
       ) : error ? (
         <p className="mt-8 text-center text-red-500">{error}</p> // Display error message

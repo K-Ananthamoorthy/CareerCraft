@@ -1,11 +1,11 @@
-"use client"
+'use client'
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { useEffect, useState } from 'react'
-import { Menu, X, ChevronDown } from 'lucide-react'
+import { Menu, LogOut } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +19,6 @@ export default function Header() {
   const supabase = createClientComponentClient()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const checkUser = async () => {
@@ -28,7 +27,7 @@ export default function Header() {
       setIsLoaded(true)
     }
     checkUser()
-  }, [])
+  }, [supabase.auth])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -48,69 +47,74 @@ export default function Header() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow">
+    <header className="sticky top-0 z-50 shadow-lg bg-gradient-to-r from-blue-500 to-purple-600">
       <nav className="container px-4 py-4 mx-auto">
         <div className="flex items-center justify-between">
-          <Link href="#" className="text-xl font-bold text-primary">
-          CareerCrafters
+          <Link href="/" className="text-2xl font-bold text-white transition-colors hover:text-blue-100">
+            CareerCrafters
           </Link>
           {isLoaded ? (
             showFullHeader ? (
               <>
-                <div className="hidden space-x-4 md:flex">
+                <div className="items-center hidden space-x-1 md:flex">
                   {navItems.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`${
-                        isActive(item.href) ? 'text-primary' : 'text-muted-foreground'
-                      } hover:text-primary transition-colors`}
+                      className={`px-3 py-2 rounded-md text-sm font-medium ${
+                        isActive(item.href) 
+                          ? 'bg-white/20 text-white' 
+                          : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                      } transition-all duration-200`}
                     >
                       {item.label}
                     </Link>
                   ))}
-                  <Button onClick={handleSignOut} variant="outline">
+                  <Button 
+                    onClick={handleSignOut} 
+                    variant="ghost" 
+                    className="text-blue-100 hover:bg-white/10 hover:text-white"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
                   </Button>
                 </div>
                 <div className="md:hidden">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  >
-                    {isMobileMenuOpen ? <X /> : <Menu />}
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
+                        <Menu className="w-5 h-5" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      {navItems.map((item) => (
+                        <DropdownMenuItem key={item.href} asChild>
+                          <Link
+                            href={item.href}
+                            className={`w-full ${isActive(item.href) ? 'bg-blue-100' : ''}`}
+                          >
+                            {item.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </>
             ) : (
               pathname === '/' && (
-                <span className="text-muted-foreground"></span>
+                <span className="text-blue-100"></span>
               )
             )
           ) : (
-            <span className="text-muted-foreground">Loading...</span>
+            <span className="text-blue-100">Loading...</span>
           )}
         </div>
-        {showFullHeader && isMobileMenuOpen && (
-          <div className="mt-4 space-y-2 md:hidden">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`block py-2 px-4 rounded ${
-                  isActive(item.href) ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
-                } hover:bg-primary/5 transition-colors`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <Button onClick={handleSignOut} variant="outline" className="w-full">
-              Sign Out
-            </Button>
-          </div>
-        )}
       </nav>
     </header>
   )
