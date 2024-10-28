@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClientComponentClient, User } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { useEffect, useState } from 'react'
-import { Menu, LogOut } from 'lucide-react'
+import { Menu, LogOut, User as UserIcon } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function Header() {
   const pathname = usePathname()
@@ -25,7 +26,15 @@ export default function Header() {
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      if (user) {
+        setUser(user)
+        localStorage.setItem('user', JSON.stringify(user))
+      } else {
+        const storedUser = localStorage.getItem('user')
+        if (storedUser) {
+          setUser(JSON.parse(storedUser))
+        }
+      }
       setIsLoaded(true)
     }
     checkUser()
@@ -33,12 +42,13 @@ export default function Header() {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
         setUser(session?.user ?? null)
-        toast({
-          title: "Login Successful",
-          description: "Welcome back!",
-        })
+        if (session?.user) {
+          localStorage.setItem('user', JSON.stringify(session.user))
+
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
+        localStorage.removeItem('user')
         toast({
           title: "Signed Out",
           description: "You have been successfully logged out.",
@@ -53,6 +63,7 @@ export default function Header() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
+    localStorage.removeItem('user')
     router.push('/')
   }
 
@@ -65,11 +76,10 @@ export default function Header() {
     { href: '/assessment', label: 'Assessments' },
     { href: '/learning-paths', label: 'Learning Paths' },
     { href: '/career-recommendations', label: 'Career' },
-    { href: '/profile', label: 'Profile' },
   ]
 
   return (
-    <header className="sticky top-0 z-50 shadow-lg bg-gradient-to-r from-blue-500 to-purple-600">
+    <header className="sticky top-0 z-50 shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
       <nav className="container px-4 py-4 mx-auto">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold text-white transition-colors hover:text-blue-100">
@@ -92,14 +102,28 @@ export default function Header() {
                       {item.label}
                     </Link>
                   ))}
-                  <Button 
-                    onClick={handleSignOut} 
-                    variant="ghost" 
-                    className="text-blue-100 hover:bg-white/10 hover:text-white"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative w-8 h-8 rounded-full">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={user?.user_metadata?.avatar_url || '/placeholder.svg'} alt={user?.email || 'User avatar'} />
+                          <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile">
+                          <UserIcon className="w-4 h-4 mr-2" />
+                          View Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <div className="md:hidden">
                   <DropdownMenu>
@@ -120,7 +144,13 @@ export default function Header() {
                           </Link>
                         </DropdownMenuItem>
                       ))}
-                      <DropdownMenuItem onClick={handleSignOut}>
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile" className="w-full">
+                          <UserIcon className="w-4 h-4 mr-2" />
+                          View Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleSignOut} className="w-full">
                         <LogOut className="w-4 h-4 mr-2" />
                         Sign Out
                       </DropdownMenuItem>
