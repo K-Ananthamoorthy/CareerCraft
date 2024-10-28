@@ -10,6 +10,13 @@ export async function middleware(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const publicRoutes = ['/about', '/privacy', '/terms', '/contact']
+
+  // Check if the route is public
+  if (publicRoutes.some((route) => req.nextUrl.pathname.startsWith(route))) {
+    return res
+  }
+
   // If the user is not logged in and trying to access a protected route, redirect to login
   if (!user && !req.nextUrl.pathname.startsWith('/login') && !req.nextUrl.pathname.startsWith('/register') && req.nextUrl.pathname !== '/') {
     return NextResponse.redirect(new URL('/login', req.url))

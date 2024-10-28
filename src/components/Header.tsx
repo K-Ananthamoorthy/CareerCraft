@@ -44,7 +44,6 @@ export default function Header() {
         setUser(session?.user ?? null)
         if (session?.user) {
           localStorage.setItem('user', JSON.stringify(session.user))
-
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
@@ -78,11 +77,14 @@ export default function Header() {
     { href: '/career-recommendations', label: 'Career' },
   ]
 
+  // Determine the link for the CareerCrafters heading
+  const homeLink = user ? '/dashboard' : '/'
+
   return (
     <header className="sticky top-0 z-50 shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
       <nav className="container px-4 py-4 mx-auto">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-white transition-colors hover:text-blue-100">
+          <Link href={homeLink} className="text-2xl font-bold text-white transition-colors hover:text-blue-100">
             CareerCrafters
           </Link>
           {isLoaded ? (
