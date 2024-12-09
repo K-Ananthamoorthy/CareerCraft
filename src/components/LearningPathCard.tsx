@@ -1,8 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "../components/ui/badge"
 import Link from 'next/link'
+import { Clock, BarChart } from 'lucide-react'
 
 interface LearningPathCardProps {
+  id: string
   title: string
   description: string
   duration: string
@@ -10,22 +13,29 @@ interface LearningPathCardProps {
   slug: string
 }
 
-export default function LearningPathCard({ title, description, duration, level, slug }: LearningPathCardProps) {
+export default function LearningPathCard({ id, title, description, duration, level, slug }: LearningPathCardProps) {
   return (
-    <Card>
+    <Card className="transition-shadow duration-300 hover:shadow-lg">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="text-2xl">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-between mb-4">
-          <span>Duration: {duration}</span>
-          <span>Level: {level}</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Clock className="w-4 h-4 mr-2" />
+            <span>{duration}</span>
+          </div>
+          <Badge variant={level === 'Beginner' ? 'secondary' : level === 'Intermediate' ? 'default' : 'destructive'}>
+            <BarChart className="w-4 h-4 mr-2" />
+            {level}
+          </Badge>
         </div>
         <Button asChild className="w-full">
-          <Link href={`#${slug}`}>Start Learning</Link>
+          <Link href={`/learning-paths/${slug}`}>Start Your Journey</Link>
         </Button>
       </CardContent>
     </Card>
   )
 }
+

@@ -1,57 +1,77 @@
 "use client";
 
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import LearningPathCard from '@/components/LearningPathCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
-const learningPaths = [
-  {
-    title: "Full Stack Web Development",
-    description: "Master modern web technologies and build complex web applications",
-    duration: "12 weeks",
-    level: "Intermediate",
-    slug: "full-stack-web-development"
-  },
-  {
-    title: "Machine Learning Fundamentals",
-    description: "Learn the basics of machine learning and AI algorithms",
-    duration: "8 weeks",
-    level: "Beginner",
-    slug: "machine-learning-fundamentals"
-  },
-  {
-    title: "Advanced Data Structures and Algorithms",
-    description: "Improve your problem-solving skills with advanced DSA concepts",
-    duration: "10 weeks",
-    level: "Advanced",
-    slug: "advanced-dsa"
-  },
-  {
-    title: "Cloud Computing and DevOps",
-    description: "Explore cloud platforms and learn DevOps practices",
-    duration: "6 weeks",
-    level: "Intermediate",
-    slug: "cloud-computing-devops"
-  }
-];
+interface LearningPath {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  level: string;
+  slug: string;
+}
 
-export default function LearningPathsContent() {
+interface LearningPathsContentProps {
+  filter?: string;
+}
+
+export default function LearningPathsContent({ filter }: LearningPathsContentProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    async function fetchLearningPaths() {
+      try {
+        let query = supabase.from('learning_paths').select('*')
+        
+        if (filter && filter !== 'all') {
+          query = query.eq('level', filter)
+        }
+        
+        const { data, error } = await query
+        
+        if (error) {
+          throw error;
+        }
+
+        setLearningPaths(data || []);
+      } catch (error) {
+        console.error('Error fetching learning paths:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchLearningPaths();
+  }, [supabase, filter]);
 
   if (isLoading) {
     return <LoadingSpinner />;
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {learningPaths.map((path) => (
-        <LearningPathCard key={path.slug} {...path} />
+    <motion.div 
+      className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {learningPaths.map((path, index) => (
+        <motion.div
+          key={path.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: index * 0.1 }}
+        >
+          <LearningPathCard {...path} />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
+

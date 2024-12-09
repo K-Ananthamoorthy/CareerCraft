@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface Option {
   id: string
@@ -13,7 +14,7 @@ interface Option {
 interface Question {
   id: string
   question_text: string
-  correct_answer: number
+  correct_answer: string
   options: Option[]
 }
 
@@ -21,6 +22,7 @@ interface Assessment {
   id: string
   title: string
   description: string
+  category: string
   duration: string
   questions: Question[]
 }
@@ -28,23 +30,52 @@ interface Assessment {
 export default function AssessmentPage({ assessment }: { assessment: Assessment }) {
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const router = useRouter()
+  const supabase = createClientComponentClient()
 
   const handleAnswerChange = (questionId: string, optionId: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: optionId }))
   }
 
+  const calculateScore = (): number => {
+    let correctAnswers = 0
+    assessment.questions.forEach(question => {
+      if (answers[question.id] === question.correct_answer) {
+        correctAnswers++
+      }
+    })
+    return Math.round((correctAnswers / assessment.questions.length) * 10)
+  }
+
   const handleSubmit = async () => {
-    // Here you would typically send the answers to your backend
-    console.log('Submitting answers:', answers)
-    
-    // For demonstration, we'll just redirect to a results page
-    router.push(`/assessment/${assessment.id}/results`)
+    const score = calculateScore()
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user found')
+
+      const { error } = await supabase
+        .from('assessment_results')
+        .upsert({
+          user_id: user.id,
+          assessment_id: assessment.id,
+          score: score,
+          completed_at: new Date().toISOString()
+        })
+
+      if (error) throw error
+
+      router.push(`/assessment/${assessment.id}/results?score=${score}`)
+    } catch (error) {
+      console.error('Error submitting assessment:', error)
+      // Handle error (e.g., show error message to user)
+    }
   }
 
   return (
     <div className="container px-4 py-8 mx-auto">
       <h1 className="mb-4 text-2xl font-bold">{assessment.title}</h1>
       <p className="mb-4">{assessment.description}</p>
+      <p className="mb-2">Category: {assessment.category}</p>
       <p className="mb-6">Duration: {assessment.duration}</p>
       
       <div className="space-y-6">

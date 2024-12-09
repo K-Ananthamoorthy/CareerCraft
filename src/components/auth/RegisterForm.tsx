@@ -57,8 +57,26 @@ export default function RegisterForm() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.signUp({ email, password })
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
       if (error) throw error
+
+      if (data.user) {
+        // Create initial profile entry
+        const { error: profileError } = await supabase
+          .from('student_profiles')
+          .insert([
+            { user_id: data.user.id, email: data.user.email }
+          ])
+        
+        if (profileError) throw profileError
+      }
+
       router.push('/profile')
       toast({
         title: "Registration Successful",

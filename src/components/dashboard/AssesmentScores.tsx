@@ -1,17 +1,50 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-const assessmentScores = [
-  { assessment: "Engineering Fundamentals", score: 85 },
-  { assessment: "Data Structures & Algorithms", score: 72 },
-  { assessment: "Web Technologies", score: 90 },
-  { assessment: "Database Systems", score: 78 },
-  { assessment: "Software Engineering", score: 88 },
-]
+interface AssessmentScoresProps {
+  userId: string;
+}
 
-export default function AssessmentScores() {
+interface AssessmentScore {
+  assessment: string;
+  score: number;
+}
+
+export default function AssessmentScores({ userId }: AssessmentScoresProps) {
+  const [assessmentScores, setAssessmentScores] = useState<AssessmentScore[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    async function fetchAssessmentScores() {
+      try {
+        const { data, error } = await supabase
+          .from('user_assessments')
+          .select('assessment, score')
+          .eq('user_id', userId);
+
+        if (error) throw error;
+
+        setAssessmentScores(data);
+      } catch (error) {
+        console.error('Error fetching assessment scores:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchAssessmentScores();
+  }, [userId, supabase]);
+
+  if (isLoading) {
+    return <div>Loading assessment scores...</div>;
+  }
+
   return (
     <Card className="h-full">
       <CardHeader>
@@ -46,5 +79,6 @@ export default function AssessmentScores() {
         </ResponsiveContainer>
       </CardContent>
     </Card>
-  )
+  );
 }
+

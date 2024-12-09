@@ -11,34 +11,48 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { CalendarIcon, GraduationCapIcon, MapPinIcon, BookOpenIcon, Upload } from "lucide-react"
+import { CalendarIcon, GraduationCapIcon, MapPinIcon, BookOpenIcon, Upload } from 'lucide-react'
 import Confetti from 'react-confetti'
+import { Textarea } from "@/components/ui/textarea"
 
 const engineeringBranches = [
-  "Computer Science and Engineering",
-  "Electronics and Communication Engineering",
-  "Mechanical Engineering",
-  "Electrical Engineering",
-  "Civil Engineering",
-  "Chemical Engineering",
-  "Aerospace Engineering",
-  "Biotechnology Engineering",
-  "Information Technology",
-  "Other"
-]
+  "Artificial Intelligence and Machine Learning (AIML)",
+  "Artificial Intelligence and Data Science (AIDS)",
+  "Computer Science and Engineering (CSE)",
+  "Electronics and Communication Engineering (ECE)",
+  "Mechanical Engineering (MECH)",
+  "Civil Engineering (CIVIL)"
+];
+
 
 interface ProfileData {
   fullName: string
-  dateOfBirth: string
+  dateOfBirth: string | null
   state: string
   engineeringBranch: string
   collegeYear: string
   collegeNameAndLocation: string
   interests: string
   avatarUrl: string
+  age: number
+  attendanceRate: number
+  averageTestScore: number
+  extracurricularScore: number
+  codingSkillScore: number
+  communicationScore: number
+  leadershipScore: number
+  internshipExperience: number
+  hobbies: string
+  goal: string
+  activeBacklogs: string
 }
 
-export default function StudentProfileForm({ initialProfile }: { initialProfile: ProfileData | null }) {
+interface AssessmentResult {
+  category: string
+  score: number
+}
+
+export default function StudentProfileForm() {
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("view")
   const [showConfetti, setShowConfetti] = useState(false)
@@ -47,39 +61,83 @@ export default function StudentProfileForm({ initialProfile }: { initialProfile:
   const supabase = createClientComponentClient()
 
   const [formData, setFormData] = useState<ProfileData>({
-    fullName: "",
-    dateOfBirth: "",
+    fullName: "New User",
+    dateOfBirth: null,
     state: "",
     engineeringBranch: "",
     collegeYear: "",
     collegeNameAndLocation: "",
     interests: "",
     avatarUrl: "",
+    age: 0,
+    attendanceRate: 0,
+    averageTestScore: 0,
+    extracurricularScore: 0,
+    codingSkillScore: 0,
+    communicationScore: 0,
+    leadershipScore: 0,
+    internshipExperience: 0,
+    hobbies: "",
+    goal: "",
+    activeBacklogs: "",
   })
+
+  const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data, error } = await supabase
-          .from("student_profiles")
-          .select("*")
-          .eq("user_id", user.id)
-          .single()
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data, error } = await supabase
+            .from("student_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .single()
 
-        if (error) {
-          console.error("Error fetching profile:", error)
-        } else if (data) {
-          setFormData(data)
+          if (error) {
+            console.error("Error fetching profile:", error)
+          } else if (data) {
+            setFormData({
+              ...formData,
+              ...data,
+              fullName: data.fullName || "New User",
+              interests: data.interests || "",
+            })
+          }
+
+          // Fetch assessment results
+          const { data: results, error: resultsError } = await supabase
+            .from("assessment_results")
+            .select(`
+              assessments (
+                category
+              ),
+              score
+            `)
+            .eq("user_id", user.id)
+
+          if (resultsError) {
+            console.error("Error fetching assessment results:", resultsError)
+          } else if (results) {
+            const formattedResults = results.map(result => ({
+              category: result.assessments[0].category,
+              score: result.score
+            }))
+            setAssessmentResults(formattedResults)
+          }
         }
+      } catch (error) {
+        console.error("Error in fetchProfile:", error)
       }
     }
 
     fetchProfile()
   }, [supabase])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const value = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value
+    setFormData({ ...formData, [e.target.name]: value })
   }
 
   const handleSelectChange = (field: string, value: string) => {
@@ -216,7 +274,11 @@ export default function StudentProfileForm({ initialProfile }: { initialProfile:
                   src={formData.avatarUrl ? decodeURI(formData.avatarUrl) : "/placeholder.svg"} 
                   alt={formData.fullName} 
                 />
-                <AvatarFallback>{formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}</AvatarFallback>
+                <AvatarFallback>
+                  {formData.fullName
+                    ? formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase()
+                    : 'U'}
+                </AvatarFallback>
               </Avatar>
               {activeTab === "edit" && (
                 <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 p-1 rounded-full cursor-pointer bg-primary text-primary-foreground">
@@ -244,40 +306,59 @@ export default function StudentProfileForm({ initialProfile }: { initialProfile:
                     <CalendarIcon className="w-5 h-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">Date of Birth</p>
-                      <p className="text-sm text-muted-foreground">{formData.dateOfBirth}</p>
+                      <p className="text-sm text-muted-foreground">{formData.dateOfBirth || "Not set"}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPinIcon className="w-5 h-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">State</p>
-                      <p className="text-sm text-muted-foreground">{formData.state}</p>
+                      <p className="text-sm text-muted-foreground">{formData.state || "Not set"}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <GraduationCapIcon className="w-5 h-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">Year of Study</p>
-                      <p className="text-sm text-muted-foreground">{formData.collegeYear}</p>
+                      <p className="text-sm text-muted-foreground">{formData.collegeYear || "Not set"}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <BookOpenIcon className="w-5 h-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">College</p>
-                      <p className="text-sm text-muted-foreground">{formData.collegeNameAndLocation}</p>
+                      <p className="text-sm text-muted-foreground">{formData.collegeNameAndLocation || "Not set"}</p>
                     </div>
                   </div>
                 </div>
                 <div>
                   <h3 className="mb-2 text-lg font-semibold">Technical Interests</h3>
                   <div className="flex flex-wrap gap-2">
-                    {formData.interests.split(',').map((interest, index) => (
+                    {formData.interests?.split(',').map((interest, index) => (
                       <span key={index} className="px-3 py-1 text-sm rounded-full bg-primary/10 text-primary">
                         {interest.trim()}
                       </span>
-                    ))}
+                    )) || <span className="text-muted-foreground">No interests set</span>}
                   </div>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-lg font-semibold">Academic Information</h3>
+                  <p>Attendance Rate: {formData.attendanceRate}%</p>
+                  <p>Average Test Score: {formData.averageTestScore}/100</p>
+                  <p>Internship Experience: {formData.internshipExperience} months</p>
+                  <p>Active Backlogs: {formData.activeBacklogs || "None"}</p>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-lg font-semibold">Skills and Scores</h3>
+                  {assessmentResults.map((result, index) => (
+                    <p key={index}>{result.category}: {result.score.toFixed(2)}/10</p>
+                  ))}
+                </div>
+                <div>
+                  <h3 className="mb-2 text-lg font-semibold">Personal Information</h3>
+                  <p>Age: {formData.age}</p>
+                  <p>Hobbies: {formData.hobbies || "Not set"}</p>
+                  <p>Career Goal: {formData.goal || "Not set"}</p>
                 </div>
               </div>
             </TabsContent>
@@ -300,7 +381,18 @@ export default function StudentProfileForm({ initialProfile }: { initialProfile:
                       id="dateOfBirth"
                       name="dateOfBirth"
                       type="date"
-                      value={formData.dateOfBirth}
+                      value={formData.dateOfBirth || ''}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input
+                      id="age"
+                      name="age"
+                      type="number"
+                      value={formData.age}
                       onChange={handleChange}
                       required
                     />
@@ -354,6 +446,45 @@ export default function StudentProfileForm({ initialProfile }: { initialProfile:
                       required
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="attendanceRate">Attendance Rate (%)</Label>
+                    <Input
+                      id="attendanceRate"
+                      name="attendanceRate"
+                      type="number"
+                      value={formData.attendanceRate}
+                      onChange={handleChange}
+                      min="0"
+                      max="100"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="averageTestScore">Average Test Score</Label>
+                    <Input
+                      id="averageTestScore"
+                      name="averageTestScore"
+                      type="number"
+                      value={formData.averageTestScore}
+                      onChange={handleChange}
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="internshipExperience">Internship Experience (months)</Label>
+                    <Input
+                      id="internshipExperience"
+                      name="internshipExperience"
+                      type="number"
+                      value={formData.internshipExperience}
+                      onChange={handleChange}
+                      min="0"
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="interests">Technical Interests (comma-separated)</Label>
@@ -363,6 +494,36 @@ export default function StudentProfileForm({ initialProfile }: { initialProfile:
                     value={formData.interests}
                     onChange={handleChange}
                     placeholder="e.g., Machine Learning, IoT, Robotics"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hobbies">Hobbies</Label>
+                  <Input
+                    id="hobbies"
+                    name="hobbies"
+                    value={formData.hobbies}
+                    onChange={handleChange}
+                    placeholder="e.g., Reading, Photography, Hiking"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="goal">Career Goal</Label>
+                  <Input
+                    id="goal"
+                    name="goal"
+                    value={formData.goal}
+                    onChange={handleChange}
+                    placeholder="e.g., Become a Data Scientist"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="activeBacklogs">Active Backlogs (if any)</Label>
+                  <Textarea
+                    id="activeBacklogs"
+                    name="activeBacklogs"
+                    value={formData.activeBacklogs}
+                    onChange={handleChange}
+                    placeholder="Enter subject name and code for any active backlogs"
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
