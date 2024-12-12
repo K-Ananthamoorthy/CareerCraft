@@ -1,3 +1,4 @@
+// app/assessment/[id]/results/page.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -6,7 +7,13 @@ import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-export default function ResultsPage({ params }: { params: { id: string } }) {
+type PageProps = {
+  params: {
+    id: string;
+  };
+};
+
+export default function ResultsPage({ params }: PageProps) {
   const [assessmentTitle, setAssessmentTitle] = useState('')
   const searchParams = useSearchParams()
   const score = searchParams.get('score')
