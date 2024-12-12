@@ -42,7 +42,7 @@ async function ProfileContent() {
 
   return (
     <div className="container px-4 py-10 mx-auto sm:px-6 lg:px-8">
-      <h1 className="mb-6 text-3xl font-bold text-center text-primary">Your Engineering Student Profile</h1>
+      <h1 className="text-5xl font-bold text-center mb-9 text-primary">Your Profile</h1>
       <div className="max-w-4xl mx-auto">
         <StudentProfileForm initialProfile={profile} />
       </div>

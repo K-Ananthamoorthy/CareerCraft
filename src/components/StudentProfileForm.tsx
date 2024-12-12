@@ -25,6 +25,7 @@ const engineeringBranches = [
   "Civil Engineering (CIVIL)"
 ];
 
+
 interface ProfileData {
   fullName: string
   dateOfBirth: string | null
