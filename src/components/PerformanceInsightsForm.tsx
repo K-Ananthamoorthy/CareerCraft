@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import ReactMarkdown from 'react-markdown'
 import { ArrowRight, CheckCircle, XCircle } from 'lucide-react'
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 interface FormData {
   age: number
@@ -21,6 +22,16 @@ interface FormData {
   communication_score: number
   leadership_score: number
   internship_experience: number
+}
+
+interface ProfileData {
+  id: string
+  user_id: string
+  fullName: string
+  dateOfBirth: string | null
+  engineeringBranch: string
+  collegeYear: string
+  // Add other relevant fields from your student_profiles table
 }
 
 interface PredictionResult {
@@ -35,6 +46,8 @@ interface PredictionResult {
 
 export default function PerformanceInsightsForm() {
   const router = useRouter()
+  const supabase = createClientComponentClient()
+  const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [formData, setFormData] = useState<FormData>({
     age: 0,
     attendance_rate: 0,
@@ -49,6 +62,48 @@ export default function PerformanceInsightsForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile, error } = await supabase
+            .from('student_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+
+          if (error) throw error
+          setProfileData(profile)
+
+          // Pre-fill form data from profile
+          if (profile) {
+            setFormData(prevData => ({
+              ...prevData,
+              age: profile.age || 0,
+              attendance_rate: profile.attendanceRate || 0,
+              average_test_score: profile.averageTestScore || 0,
+              extracurricular_score: profile.extracurricularScore || 0,
+              coding_skill_score: profile.codingSkillScore || 0,
+              communication_score: profile.communicationScore || 0,
+              leadership_score: profile.leadershipScore || 0,
+              internship_experience: profile.internshipExperience || 0
+            }))
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+        toast({
+          title: "Error",
+          description: "Failed to fetch profile data. Please try again.",
+          variant: "destructive",
+        })
+      }
+    }
+
+    fetchProfileData()
+  }, [supabase])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: parseFloat(e.target.value) })
   }
@@ -60,10 +115,17 @@ export default function PerformanceInsightsForm() {
     setError(null)
 
     try {
+      if (!profileData?.id) {
+        throw new Error('No profile found. Please complete your profile first.')
+      }
+
       const response = await fetch('/api/predict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          profile_id: profileData.id
+        })
       })
 
       if (!response.ok) {
@@ -72,6 +134,40 @@ export default function PerformanceInsightsForm() {
 
       const data = await response.json()
       setPredictionResult(data)
+
+      // Store the results in Supabase
+      const { error: insertError } = await supabase
+        .from('performance_insights')
+        .insert({
+          profile_id: profileData.id,
+          prediction_score: parseFloat(data.initialInsights.predictionScore),
+          strengths: data.initialInsights.strengths,
+          weaknesses: data.initialInsights.weaknesses,
+          recommendations: data.initialInsights.recommendations,
+          enhanced_insights: data.enhancedInsights
+        })
+
+      if (insertError) throw insertError
+
+      // Update the profile with the latest scores
+      const { error: updateError } = await supabase
+        .from('student_profiles')
+        .update({
+          averageTestScore: formData.average_test_score,
+          attendanceRate: formData.attendance_rate,
+          codingSkillScore: formData.coding_skill_score,
+          communicationScore: formData.communication_score,
+          leadershipScore: formData.leadership_score,
+          internshipExperience: formData.internship_experience
+        })
+        .eq('id', profileData.id)
+
+      if (updateError) throw updateError
+
+      toast({
+        title: "Success",
+        description: "Performance insights saved successfully.",
+      })
     } catch (error) {
       console.error('Prediction error:', error)
       setError((error as Error).message || "Failed to make prediction. Please try again.")
@@ -86,8 +182,8 @@ export default function PerformanceInsightsForm() {
   }
 
   const formatPredictionScore = (score: number | string): number => {
-    const numScore = typeof score === 'string' ? parseFloat(score) : score;
-    return isNaN(numScore) ? 0 : Math.min(Math.max(numScore, 0), 100);
+    const numScore = typeof score === 'string' ? parseFloat(score) : score
+    return isNaN(numScore) ? 0 : Math.min(Math.max(numScore, 0), 100)
   }
 
   return (
@@ -97,27 +193,34 @@ export default function PerformanceInsightsForm() {
         <CardDescription>Fill in the form below to get personalized insights about your academic performance.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {Object.entries(formData).map(([key, value]) => (
-              <div key={key} className="space-y-2">
-                <Label htmlFor={key}>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Label>
-                <Input
-                  id={key}
-                  name={key}
-                  type="number"
-                  value={value}
-                  onChange={handleChange}
-                  required
-                  className="w-full"
-                />
-              </div>
-            ))}
+        {profileData ? (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {Object.entries(formData).map(([key, value]) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={key}>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Label>
+                  <Input
+                    id={key}
+                    name={key}
+                    type="number"
+                    value={value}
+                    onChange={handleChange}
+                    required
+                    className="w-full"
+                  />
+                </div>
+              ))}
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Generating Insights..." : "Get Insights"}
+            </Button>
+          </form>
+        ) : (
+          <div className="text-center">
+            <p className="mb-4">Please complete your profile before generating performance insights.</p>
+            <Button onClick={() => router.push('/profile')}>Go to Profile</Button>
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Generating Insights..." : "Get Insights"}
-          </Button>
-        </form>
+        )}
 
         {error && (
           <div className="p-4 mt-6 text-red-700 bg-red-100 rounded-md">

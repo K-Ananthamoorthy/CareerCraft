@@ -21,7 +21,7 @@ interface EnhancedDashboardProps {
 }
 
 interface DashboardData {
-  fullName: string;
+  full_name: string;
   recentActivities: string[];
   upcomingEvents: { title: string; date: string }[];
   learningProgress: { course: string; progress: number }[];
@@ -41,7 +41,7 @@ export default function EnhancedDashboard({ user }: EnhancedDashboardProps) {
       try {
         const { data: profileData, error: profileError } = await supabase
           .from("student_profiles")
-          .select("fullName")
+          .select("full_name")
           .eq("user_id", user.id)
           .single();
 
@@ -57,7 +57,7 @@ export default function EnhancedDashboard({ user }: EnhancedDashboardProps) {
 
         setDashboardData({
           ...data,
-          fullName: profileData?.fullName || user.email || "Student",
+          full_name: profileData?.full_name || user.email || "Student",
         } as DashboardData);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -83,7 +83,7 @@ export default function EnhancedDashboard({ user }: EnhancedDashboardProps) {
       >
         <Sparkles className="w-8 h-8 text-yellow-400" />
         <h1 className="text-2xl font-bold text-primary sm:text-3xl">
-          Welcome, {dashboardData?.fullName || user.email || "Student"}!
+          Welcome, {dashboardData?.full_name || user.email || "Student"}!
         </h1>
       </motion.div>
 

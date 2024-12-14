@@ -15,6 +15,7 @@ import { CalendarIcon, GraduationCapIcon, MapPinIcon, BookOpenIcon, Upload, Spar
 import Confetti from 'react-confetti'
 import { Textarea } from "@/components/ui/textarea"
 import { motion } from "framer-motion"
+import { Progress } from "@/components/ui/progress"
 
 const engineeringBranches = [
   "Artificial Intelligence and Machine Learning (AIML)",
@@ -25,8 +26,9 @@ const engineeringBranches = [
   "Civil Engineering (CIVIL)"
 ];
 
-
 interface ProfileData {
+  id: string
+  user_id: string
   fullName: string
   dateOfBirth: string | null
   state: string
@@ -46,11 +48,23 @@ interface ProfileData {
   hobbies: string
   goal: string
   activeBacklogs: string
+  updated_at: string | null;
 }
 
 interface AssessmentResult {
   category: string
   score: number
+}
+
+interface PerformanceInsight {
+  id: string
+  profile_id: string
+  prediction_score: number
+  strengths: string[]
+  weaknesses: string[]
+  recommendations: string[]
+  enhanced_insights: string
+  created_at: string
 }
 
 export default function StudentProfileForm() {
@@ -62,6 +76,8 @@ export default function StudentProfileForm() {
   const supabase = createClientComponentClient()
 
   const [formData, setFormData] = useState<ProfileData>({
+    id: "",
+    user_id: "",
     fullName: "New User",
     dateOfBirth: null,
     state: "",
@@ -81,59 +97,80 @@ export default function StudentProfileForm() {
     hobbies: "",
     goal: "",
     activeBacklogs: "",
+    updated_at: null,
   })
 
   const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
+  const [performanceInsights, setPerformanceInsights] = useState<PerformanceInsight[]>([])
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileAndInsights = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          const { data, error } = await supabase
-            .from("student_profiles")
-            .select("*")
-            .eq("user_id", user.id)
+          // Fetch profile
+          const { data: profile, error: profileError } = await supabase
+            .from('student_profiles')
+            .select('*')
+            .eq('user_id', user.id)
             .single()
 
-          if (error) {
-            console.error("Error fetching profile:", error)
-          } else if (data) {
+          if (profileError) throw profileError
+
+          if (profile) {
             setFormData({
               ...formData,
-              ...data,
-              fullName: data.fullName || "New User",
-              interests: data.interests || "",
+              ...profile,
+              fullName: profile.fullName || "New User",
+              interests: profile.interests || "",
             })
+
+            // Fetch performance insights separately
+            const { data: insights, error: insightsError } = await supabase
+              .from('performance_insights')
+              .select('*')
+              .eq('profile_id', profile.id)
+              .order('created_at', { ascending: false })
+
+            if (insightsError) throw insightsError
+
+            if (insights) {
+              setPerformanceInsights(insights)
+            }
           }
 
           // Fetch assessment results
           const { data: results, error: resultsError } = await supabase
-            .from("assessment_results")
+            .from('assessment_results')
             .select(`
               assessments (
                 category
               ),
               score
             `)
-            .eq("user_id", user.id)
+            .eq('user_id', user.id)
 
-          if (resultsError) {
-            console.error("Error fetching assessment results:", resultsError)
-          } else if (results) {
+          if (resultsError) throw resultsError
+
+          if (results) {
             const formattedResults = results.map(result => ({
-              category: result.assessments[0].category,
+              category: result.assessments?.[0]?.category || 'Unknown',
               score: result.score
             }))
             setAssessmentResults(formattedResults)
           }
         }
       } catch (error) {
-        console.error("Error in fetchProfile:", error)
+        console.error("Error in fetchProfileAndInsights:", error)
+        toast({
+          title: "Error",
+          description: "Failed to fetch profile data. Please try again.",
+          variant: "destructive",
+        })
       }
     }
 
-    fetchProfile()
+    fetchProfileAndInsights()
   }, [supabase])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -227,8 +264,8 @@ export default function StudentProfileForm() {
       const { error } = await supabase
         .from("student_profiles")
         .upsert({ 
-          user_id: user.id,
-          ...formData
+          ...formData,
+          // No need to set updated_at manually, it will be handled by the trigger
         })
 
       if (error) throw error
@@ -255,6 +292,71 @@ export default function StudentProfileForm() {
       setLoading(false)
     }
   }
+
+  const renderPerformanceInsights = () => {
+    if (performanceInsights.length === 0) {
+      return (
+        <div className="mt-6">
+          <h3 className="mb-2 text-lg font-semibold">Performance Insights</h3>
+          <p className="text-muted-foreground">No performance insights available yet.</p>
+          <Button 
+            onClick={() => router.push('/insights')}
+            className="mt-2"
+          >
+            Get Performance Insights
+          </Button>
+        </div>
+      );
+    }
+
+    const latestInsight = performanceInsights[0];
+    return (
+      <div className="mt-6">
+        <h3 className="mb-4 text-lg font-semibold">Latest Performance Insight</h3>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-4">
+              <h4 className="mb-2 font-medium">Prediction Score</h4>
+              <div className="flex items-center">
+                <Progress 
+                  value={latestInsight.prediction_score} 
+                  max={100}
+                  className="w-full mr-4" 
+                />
+                <span className="font-bold">
+                  {latestInsight.prediction_score.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <h4 className="mb-2 font-medium">Key Strengths</h4>
+                <ul className="space-y-1">
+                  {latestInsight.strengths.slice(0, 3).map((strength, index) => (
+                    <li key={index} className="text-sm">• {strength}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="mb-2 font-medium">Areas for Improvement</h4>
+                <ul className="space-y-1">
+                  {latestInsight.weaknesses.slice(0, 3).map((weakness, index) => (
+                    <li key={index} className="text-sm">• {weakness}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <Button 
+              onClick={() => router.push('/insights')}
+              className="mt-4"
+            >
+              View Full Insights
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -403,6 +505,7 @@ export default function StudentProfileForm() {
                     <p>Hobbies: {formData.hobbies || "Not set"}</p>
                     <p>Career Goal: {formData.goal || "Not set"}</p>
                   </div>
+                  {renderPerformanceInsights()}
                 </div>
               </TabsContent>
               <TabsContent value="edit">

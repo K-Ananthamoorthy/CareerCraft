@@ -76,6 +76,7 @@ export default function Header() {
     { href: '/learning-paths', label: 'Learning Paths' },
     { href: '/career-recommendations', label: 'Career' },
     { href: '/study-tools', label: 'Study Tools' },
+    { href: '/social', label: 'Community' },
   ]
 
   // Determine the link for the CareerCrafters heading
