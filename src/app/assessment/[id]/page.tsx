@@ -1,39 +1,59 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
-import AssessmentPage from './AssessmentPage';
+// src/app/assessment/[id]/page.tsx
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { notFound } from 'next/navigation'
+import AssessmentPage from './AssessmentPage'
+import { Metadata } from 'next'
 
-type Params = {
-  id: string;
-};
+interface Params {
+  id: string
+}
 
-// Async function to fetch assessment data
-async function getAssessment(id: string) {
+interface Assessment {
+  id: string
+  title: string
+  description: string
+  category: string
+  duration: string
+  total_questions: number
+  questions: {
+    id: string
+    question_text: string
+    question_type: string
+    correct_answer: string
+    points: number
+    options: {
+      id: string
+      option_text: string
+    }[]
+  }[]
+}
+
+async function getAssessment(id: string): Promise<Assessment | null> {
   const cookieStore = cookies()
   const supabase = createServerComponentClient({ cookies: () => cookieStore })
   const { data: assessment, error } = await supabase
     .from('assessments')
-    .select('*')
+    .select(`
+      *,
+      categories(name)
+    `)
     .eq('id', id)
-    .single();
+    .single()
 
-  if (error) {
-    console.error('Error fetching assessment:', error);
-    return null;
-  }
-
-  if (!assessment) {
-    return null;
+  if (error || !assessment) {
+    console.error('Error fetching assessment:', error)
+    return null
   }
 
   const { data: questions, error: questionsError } = await supabase
     .from('questions')
-    .select('id, question_text, correct_answer')
-    .eq('assessment_id', id);
+    .select('id, question_text, question_type, correct_answer, points')
+    .eq('assessment_id', id)
 
   if (questionsError) {
-    console.error('Error fetching questions:', questionsError);
-    return null;
+    console.error('Error fetching questions:', questionsError)
+    return null
   }
 
   const questionsWithOptions = await Promise.all(
@@ -41,28 +61,38 @@ async function getAssessment(id: string) {
       const { data: options, error: optionsError } = await supabase
         .from('options')
         .select('id, option_text')
-        .eq('question_id', question.id);
+        .eq('question_id', question.id)
 
       if (optionsError) {
-        console.error('Error fetching options:', optionsError);
-        return question; // Return the question even if options can't be fetched
+        console.error('Error fetching options:', optionsError)
+        return question
       }
 
-      return { ...question, options };
+      return { ...question, options }
     })
-  );
+  )
 
-  return { ...assessment, questions: questionsWithOptions };
+  return { 
+    ...assessment, 
+    category: assessment.categories.name,
+    questions: questionsWithOptions 
+  }
 }
 
-// Main page component
-export default async function Page({ params }: { params: Promise<Params> }) {
-  const { id } = await params; // Await params here
-  const assessment = await getAssessment(id);
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const assessment = await getAssessment(params.id)
+  return {
+    title: assessment ? `${assessment.title} Assessment` : 'Assessment Not Found',
+    description: assessment ? assessment.description : 'Assessment details not available',
+  }
+}
+
+export default async function Page({ params }: { params: Params }) {
+  const assessment = await getAssessment(params.id)
 
   if (!assessment) {
-    notFound(); // Navigate to the 404 page if assessment not found
+    notFound()
   }
 
-  return <AssessmentPage assessment={assessment} />; // Render the AssessmentPage with the fetched data
+  return <AssessmentPage assessment={assessment} />
 }

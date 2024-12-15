@@ -15,6 +15,9 @@ interface Assessment {
   description: string
   category: string
   duration: string
+  categories: {
+    name: string
+  }
 }
 
 interface AssessmentResult {
@@ -41,15 +44,28 @@ export default function AssessmentsPage() {
         if (!user) throw new Error('No user found')
 
         const [{ data: assessmentsData, error: assessmentsError }, { data: resultsData, error: resultsError }] = await Promise.all([
-          supabase.from('assessments').select('*'),
-          supabase.from('assessment_results').select('*').eq('user_id', user.id)
+          supabase
+            .from('assessments')
+            .select(`
+              *,
+              categories (name)
+            `),
+          supabase
+            .from('assessment_results')
+            .select('*')
+            .eq('user_id', user.id)
         ])
 
         if (assessmentsError) throw assessmentsError
         if (resultsError) throw resultsError
 
-        setAssessments(assessmentsData || [])
-        setFilteredAssessments(assessmentsData || [])
+        const formattedAssessments = assessmentsData?.map(assessment => ({
+          ...assessment,
+          category: assessment.categories?.name || 'Uncategorized'
+        })) || []
+
+        setAssessments(formattedAssessments)
+        setFilteredAssessments(formattedAssessments)
         setTakenAssessments(resultsData || [])
       } catch (error) {
         console.error('Error fetching data:', error)
