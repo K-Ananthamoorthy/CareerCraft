@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import LearningPathsContent from '../../components/LearningPathContent';
+import LearningPathsContent from '@/components/Learning-path/LearningPathContent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export const metadata: Metadata = {

@@ -7,87 +7,83 @@ import { motion } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 
 interface Certificate {
-  id: string;
-  user_id: string;
-  learning_path_id: string;
-  issued_at: string;
-}
-
-interface LearningPath {
-  id: string;
-  title: string;
+  id: string
+  user_id: string
+  learning_path_id: string
+  issued_at: string
+  learning_path: {
+    title: string
+  }
+  user: {
+    name: string
+  }
 }
 
 export default function CertificatePage({ params }: { params: { id: string } }) {
   const [certificate, setCertificate] = useState<Certificate | null>(null)
-  const [learningPath, setLearningPath] = useState<LearningPath | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClientComponentClient()
   const router = useRouter()
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchCertificate() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/login')
         return
       }
 
-      const { data: certData, error: certError } = await supabase
-        .from('certifications')
-        .select('*')
-        .eq('learning_path_id', params.id)
-        .eq('user_id', user.id)
-        .single()
-
-      if (certError) {
-        console.error('Error fetching certificate:', certError)
-        router.push('/404')
-        return
-      }
-
-      setCertificate(certData)
-
-      const { data: pathData, error: pathError } = await supabase
-        .from('learning_paths')
-        .select('id, title')
+      const { data, error } = await supabase
+        .from('certificates')
+        .select(`
+          *,
+          learning_path:learning_paths(title),
+          user:users(name)
+        `)
         .eq('id', params.id)
         .single()
 
-      if (pathError) {
-        console.error('Error fetching learning path:', pathError)
+      if (error) {
+        console.error('Error fetching certificate:', error)
+        router.push('/404')
       } else {
-        setLearningPath(pathData)
+        setCertificate(data)
       }
 
       setIsLoading(false)
     }
 
-    fetchData()
+    fetchCertificate()
   }, [params.id, supabase, router])
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>
   }
 
-  if (!certificate || !learningPath) {
+  if (!certificate) {
     return <div className="flex items-center justify-center h-screen">Certificate not found</div>
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="container py-10 mx-auto text-center"
+      className="container py-10 mx-auto"
     >
-      <h1 className="mb-6 text-4xl font-bold">Certificate of Completion</h1>
-      <p className="mb-4 text-xl">This certifies that</p>
-      <p className="mb-4 text-2xl font-semibold">[Your Name]</p>
-      <p className="mb-4 text-xl">has successfully completed the course</p>
-      <p className="mb-6 text-3xl font-bold">{learningPath.title}</p>
-      <p className="mb-8 text-xl">Issued on: {new Date(certificate.issued_at).toLocaleDateString()}</p>
-      <Button onClick={() => window.print()}>Print Certificate</Button>
+      <div className="max-w-2xl p-8 mx-auto border-4 border-gray-800 rounded-lg">
+        <h1 className="mb-6 text-4xl font-bold text-center">Certificate of Completion</h1>
+        <p className="mb-4 text-xl text-center">This is to certify that</p>
+        <p className="mb-4 text-3xl font-bold text-center">{certificate.user.name}</p>
+        <p className="mb-4 text-xl text-center">has successfully completed the course</p>
+        <p className="mb-6 text-3xl font-bold text-center">{certificate.learning_path.title}</p>
+        <p className="mb-8 text-xl text-center">
+          Issued on {new Date(certificate.issued_at).toLocaleDateString()}
+        </p>
+        <div className="flex justify-center">
+          <Button onClick={() => window.print()}>Print Certificate</Button>
+        </div>
+      </div>
     </motion.div>
   )
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import LearningPathCard from '@/components/LearningPathCard';
+import LearningPathCard from './LearningPathCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';

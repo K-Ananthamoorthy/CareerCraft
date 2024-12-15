@@ -10,8 +10,8 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Clock, BarChart, BookOpen, Video, Code, Award, Users, Star, ChevronRight } from 'lucide-react'
-import YouTubeEmbed from '@/components/YoutubeEmbed'
-import AssessmentComponent from '@/components/AssessmentComponent'
+import YouTubeEmbed from '@/components/Learning-path/YoutubeEmbed'
+import AssessmentComponent from '@/components/Learning-path/Assessment'
 import EnrollmentConfirmation from '@/components/EnrollmentConfirmation'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
