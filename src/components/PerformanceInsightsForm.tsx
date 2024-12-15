@@ -181,10 +181,10 @@ export default function PerformanceInsightsForm() {
     }
   }
 
-  const formatPredictionScore = (score: number | string): number => {
-    const numScore = typeof score === 'string' ? parseFloat(score) : score
-    return isNaN(numScore) ? 0 : Math.min(Math.max(numScore, 0), 100)
-  }
+  const formatPredictionScore = (score: number | string): string => {
+      const numScore = typeof score === 'string' ? parseFloat(score) : score
+      return isNaN(numScore) ? '0' : Math.min(Math.max(numScore, 0), 100).toString()
+    }
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
@@ -249,7 +249,7 @@ export default function PerformanceInsightsForm() {
                           className="w-full mr-4" 
                         />
                         <span className="text-2xl font-bold">
-                          {formatPredictionScore(predictionResult.initialInsights.predictionScore).toFixed(2)}%
+                          {parseFloat(formatPredictionScore(predictionResult.initialInsights.predictionScore)).toFixed(2)}%
                         </span>
                       </div>
                     </div>
