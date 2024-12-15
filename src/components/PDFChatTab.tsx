@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -12,22 +11,24 @@ import ReactMarkdown from 'react-markdown'
 import { useTypingEffect } from '@/hooks/use-typing-effect'
 import * as pdfjsLib from 'pdfjs-dist'
 import { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api'
+import { Document, Page, pdfjs } from 'react-pdf'
 
-// Set up the worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
 
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
 }
 
-export default function PDFChatTab() {
+export default function EnhancedPDFChat() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [pdfContent, setPdfContent] = useState<string>('')
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [userInput, setUserInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [numPages, setNumPages] = useState<number | null>(null)
+  const [pageNumber, setPageNumber] = useState(1)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
@@ -127,27 +128,56 @@ export default function PDFChatTab() {
     }
   }
 
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages)
+  }
+
   return (
-    <Card className="transition-shadow duration-300 bg-white shadow-lg hover:shadow-xl">
-      <CardHeader>
-        <CardTitle className="flex items-center text-xl font-semibold">
-          <FileText className="w-6 h-6 mr-2 text-purple-500" />
-          PDF Chat
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4">
-          <label htmlFor="pdf-upload" className="flex flex-col items-center justify-center w-full h-32 transition-all duration-300 border-2 border-purple-300 border-dashed rounded-lg cursor-pointer bg-purple-50 hover:bg-purple-100">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <Upload className="w-8 h-8 mb-3 text-purple-500" />
-              <p className="mb-2 text-sm text-purple-700"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-              <p className="text-xs text-purple-500">PDF files only</p>
+    <div className="flex flex-col md:flex-row h-[calc(100vh-64px)]">
+      {/* PDF Viewer */}
+      <div className="w-full p-4 overflow-y-auto bg-gray-100 md:w-1/2">
+        {selectedFile ? (
+          <Document
+            file={selectedFile}
+            onLoadSuccess={onDocumentLoadSuccess}
+            className="flex flex-col items-center"
+          >
+            <Page pageNumber={pageNumber} width={Math.min(600, window.innerWidth * 0.9)} />
+            <p className="mt-4">
+              Page {pageNumber} of {numPages}
+            </p>
+            <div className="flex justify-center mt-4 space-x-2">
+              <Button
+                onClick={() => setPageNumber(page => Math.max(page - 1, 1))}
+                disabled={pageNumber <= 1}
+              >
+                Previous
+              </Button>
+              <Button
+                onClick={() => setPageNumber(page => Math.min(page + 1, numPages || 1))}
+                disabled={pageNumber >= (numPages || 1)}
+              >
+                Next
+              </Button>
             </div>
-            <Input id="pdf-upload" type="file" accept=".pdf" className="hidden" onChange={handleFileChange} ref={fileInputRef} />
-          </label>
-        </div>
-        {selectedFile && <p className="mb-4 text-sm text-purple-600">Selected file: {selectedFile.name}</p>}
-        <div className="h-[calc(100vh-24rem)] overflow-y-auto mb-4 space-y-4 p-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-100" ref={chatContainerRef}>
+          </Document>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full">
+            <label htmlFor="pdf-upload" className="flex flex-col items-center justify-center w-64 h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <Upload className="w-10 h-10 mb-3 text-gray-400" />
+                <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">PDF files only</p>
+              </div>
+              <Input id="pdf-upload" type="file" accept=".pdf" className="hidden" onChange={handleFileChange} ref={fileInputRef} />
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* Chat Interface */}
+      <div className="flex flex-col w-full p-4 bg-white md:w-1/2">
+        <div className="flex-grow p-4 mb-4 space-y-4 overflow-y-auto" ref={chatContainerRef}>
           <AnimatePresence>
             {chatMessages.map((msg, index) => (
               <motion.div
@@ -160,7 +190,7 @@ export default function PDFChatTab() {
               >
                 <div className={`max-w-[80%] p-3 rounded-lg shadow-sm ${
                   msg.role === 'user' 
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
+                    ? 'bg-blue-500 text-white' 
                     : 'bg-gray-100 text-gray-800'
                 }`}>
                   <div className="flex items-center mb-1">
@@ -220,26 +250,24 @@ export default function PDFChatTab() {
             </motion.div>
           )}
         </div>
-        <form onSubmit={handleSendMessage} className="mt-4">
-          <div className="flex space-x-2">
-            <Textarea 
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              placeholder="Ask a question about the PDF... 🤔"
-              className="flex-grow border-purple-300 resize-none focus:border-purple-500 focus:ring focus:ring-purple-200"
-              rows={2}
-            />
-            <Button 
-              type="submit" 
-              disabled={!selectedFile || isTyping}
-              className="self-end text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
-          </div>
+        <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+          <Textarea 
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            placeholder="Ask a question about the PDF..."
+            className="flex-grow resize-none"
+            rows={1}
+          />
+          <Button 
+            type="submit" 
+            disabled={!selectedFile || isTyping}
+            className="self-end"
+          >
+            <Send className="w-5 h-5" />
+          </Button>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 

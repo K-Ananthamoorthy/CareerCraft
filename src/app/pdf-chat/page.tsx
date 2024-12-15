@@ -1,4 +1,4 @@
-import PDFChatTab from '@/components/PDFChatTab'
+import EnhancedPDFChat from '@/components/PDFChatTab'
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -19,8 +19,8 @@ export default function PDFChatPage() {
           </Link>
         </div>
       </header>
-      <main className="container flex-grow px-4 py-8 mx-auto sm:px-6 lg:px-8">
-        <PDFChatTab />
+      <main className="flex-grow">
+        <EnhancedPDFChat />
       </main>
     </div>
   )

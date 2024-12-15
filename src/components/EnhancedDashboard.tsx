@@ -99,8 +99,7 @@ export default function ProfessionalDashboard() {
             <p className="text-muted-foreground">Let's check your progress</p>
           </div>
         </div>
-        <Button>View Profile</Button>
-      </motion.div>
+q1w2q NM       </motion.div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <motion.div {...fadeInUp} transition={{ delay: 0.1 }}>
