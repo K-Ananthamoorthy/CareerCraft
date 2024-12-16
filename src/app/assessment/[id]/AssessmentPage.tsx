@@ -1,34 +1,36 @@
-// src/app/assessment/[id]/AssessmentPage.tsx
+// app/assessment/[id]/AssessmentPage.tsx
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Textarea } from "@/components/ui/textarea"
-
-interface Option {
-  id: string
-  option_text: string
-}
+import { toast } from '@/hooks/use-toast'
 
 interface Question {
   id: string
   question_text: string
   question_type: string
   correct_answer: string
-  options: Option[]
   points: number
+  difficulty: string
+  options: {
+    id: string
+    option_text: string
+  }[]
 }
 
 interface Assessment {
   id: string
   title: string
   description: string
-  category: string
+  category_id: number
   duration: string
   total_questions: number
+  max_attempts: number
   questions: Question[]
 }
 
@@ -37,128 +39,175 @@ interface AssessmentPageProps {
 }
 
 export default function AssessmentPage({ assessment }: AssessmentPageProps) {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [timeLeft, setTimeLeft] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
   const supabase = createClientComponentClient()
 
+  useEffect(() => {
+    if (assessment && assessment.duration) {
+      const totalSeconds = parseDuration(assessment.duration)
+      setTimeLeft(totalSeconds)
+
+      const timer = setInterval(() => {
+        setTimeLeft((prevTime) => {
+          if (prevTime <= 1) {
+            clearInterval(timer)
+            handleSubmit()
+            return 0
+          }
+          return prevTime - 1
+        })
+      }, 1000)
+
+      return () => clearInterval(timer)
+    }
+  }, [assessment])
+
+  const parseDuration = (duration: string): number => {
+    const [hours, minutes] = duration.split(':').map(Number)
+    return hours * 3600 + minutes * 60
+  }
+
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const remainingSeconds = seconds % 60
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+
   const handleAnswerChange = (questionId: string, answer: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: answer }))
+    setAnswers((prevAnswers) => ({
+      ...prevAnswers,
+      [questionId]: answer,
+    }))
   }
 
-  const calculateScore = (): { score: number, totalPoints: number, correctAnswers: number } => {
-    let correctAnswers = 0
-    let totalPoints = 0
-    let earnedPoints = 0
-
-    assessment.questions.forEach(question => {
-      totalPoints += question.points
-      if (question.question_type === 'multiple_choice') {
-        if (answers[question.id] === question.correct_answer) {
-          correctAnswers++
-          earnedPoints += question.points
-        }
-      } else if (question.question_type === 'open_ended') {
-        // For open-ended questions, we'll assume partial credit based on answer length
-        // This is a simplified scoring method and should be replaced with a more sophisticated approach
-        const answerLength = answers[question.id]?.length || 0
-        const score = Math.min(answerLength / 100, 1) // Assume a "full" answer is 100 characters
-        earnedPoints += score * question.points
-        if (score > 0.5) correctAnswers++ // Count as correct if more than half credit
-      }
-    })
-
-    const score = (earnedPoints / totalPoints) * 10
-    return { score: Math.round(score * 100) / 100, totalPoints, correctAnswers }
-  }
-
-  const handleSubmit = async () => {
-    const { score, totalPoints, correctAnswers } = calculateScore()
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('No user found')
-
-      const { error: resultError } = await supabase
-        .from('assessment_results')
-        .upsert({
-          user_id: user.id,
-          assessment_id: assessment.id,
-          score: score,
-          total_points: totalPoints,
-          correct_answers: correctAnswers,
-          completed_at: new Date().toISOString()
-        })
-
-      if (resultError) throw resultError
-
-      // Update category score
-      const { error: categoryScoreError } = await supabase
-        .from('category_scores')
-        .upsert({
-          user_id: user.id,
-          category_id: assessment.category,
-          score: score,
-          last_updated: new Date().toISOString()
-        })
-
-      if (categoryScoreError) throw categoryScoreError
-
-      router.push(`/assessment/${assessment.id}/results?score=${score}&totalQuestions=${assessment.total_questions}&correctAnswers=${correctAnswers}`)
-    } catch (error) {
-      console.error('Error submitting assessment:', error)
-      // Handle error (e.g., show error message to user)
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < assessment.questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1)
     }
   }
 
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1)
+    }
+  }
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
+
+      const score = calculateScore()
+      const { data, error } = await supabase
+        .from('assessment_results')
+        .insert({
+          user_id: user.id,
+          assessment_id: assessment.id,
+          score: score,
+          answers: answers,
+          completed: true,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      await supabase
+        .from('assessment_attempts')
+        .update({ completed_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('assessment_id', assessment.id)
+        .is('completed_at', null)
+
+      toast({
+        title: 'Assessment Submitted',
+        description: `Your score: ${score.toFixed(2)}/10`,
+      })
+
+      router.push('/assessment')
+    } catch (error) {
+      console.error('Error submitting assessment:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to submit assessment. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const calculateScore = (): number => {
+    let totalPoints = 0
+    let earnedPoints = 0
+
+    assessment.questions.forEach((question) => {
+      totalPoints += question.points
+      if (answers[question.id] === question.correct_answer) {
+        earnedPoints += question.points
+      }
+    })
+
+    return (earnedPoints / totalPoints) * 10 // Scale to 0-10
+  }
+
+  if (!assessment || !assessment.questions || assessment.questions.length === 0) {
+    return <div>Loading assessment or no questions available...</div>
+  }
+
+  const currentQuestion = assessment.questions[currentQuestionIndex]
+
   return (
-    <div className="container px-4 py-8 mx-auto">
-      <h1 className="mb-4 text-2xl font-bold">{assessment.title}</h1>
-      <p className="mb-4">{assessment.description}</p>
-      <p className="mb-2">Category: {assessment.category}</p>
-      <p className="mb-2">Duration: {assessment.duration}</p>
-      <p className="mb-6">Total Questions: {assessment.total_questions}</p>
-      
-      <div className="space-y-6">
-        {assessment.questions.map((question, index) => (
-          <div key={question.id} className="p-4 border rounded-lg">
-            <h2 className="mb-2 font-semibold">Question {index + 1} (Points: {question.points})</h2>
-            <p className="mb-2">{question.question_text}</p>
-            {question.question_type === 'multiple_choice' ? (
-              <div className="space-y-2">
-                {question.options.map((option) => (
-                  <div key={option.id} className="flex items-center">
-                    <input 
-                      type="radio" 
-                      id={`q${question.id}-o${option.id}`} 
-                      name={`question-${question.id}`}
-                      value={option.id}
-                      checked={answers[question.id] === option.id}
-                      onChange={() => handleAnswerChange(question.id, option.id)}
-                      className="mr-2"
-                    />
-                    <label htmlFor={`q${question.id}-o${option.id}`}>{option.option_text}</label>
-                  </div>
-                ))}
-              </div>
+    <div className="container px-4 py-6 mx-auto sm:px-6 lg:px-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>{assessment.title}</CardTitle>
+          <CardDescription>{assessment.description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4 text-right">
+            Time Remaining: {formatTime(timeLeft)}
+          </div>
+          <div className="mb-6">
+            <h3 className="mb-2 text-lg font-semibold">
+              Question {currentQuestionIndex + 1} of {assessment.questions.length}
+            </h3>
+            <p className="mb-4">{currentQuestion.question_text}</p>
+            <RadioGroup
+              value={answers[currentQuestion.id] || ''}
+              onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
+            >
+              {currentQuestion.options.map((option) => (
+                <div key={option.id} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.id} id={option.id} />
+                  <Label htmlFor={option.id}>{option.option_text}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+          <div className="flex justify-between">
+            <Button
+              onClick={handlePreviousQuestion}
+              disabled={currentQuestionIndex === 0}
+            >
+              Previous
+            </Button>
+            {currentQuestionIndex < assessment.questions.length - 1 ? (
+              <Button onClick={handleNextQuestion}>Next</Button>
             ) : (
-              <Textarea
-                id={`question-${question.id}`}
-                value={answers[question.id] || ''}
-                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                placeholder="Enter your answer here..."
-                className="w-full mt-2"
-              />
+              <Button onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit Assessment'}
+              </Button>
             )}
           </div>
-        ))}
-      </div>
-
-      <div className="flex justify-between mt-8">
-        <Button asChild variant="outline">
-          <Link href="/assessment">Back to Assessments</Link>
-        </Button>
-        <Button onClick={handleSubmit}>Submit Assessment</Button>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
