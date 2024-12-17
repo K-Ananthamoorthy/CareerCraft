@@ -64,6 +64,21 @@ if (inputData.coding_skill_score >= 10) {
   recommendations.push("Start with beginner-friendly courses and practice regularly on platforms like HackerRank or LeetCode.");
 }
 
+// Extracurricular Activities
+if (inputData.extracurricular_score >= 9) {
+  strengths.push("Exceptional involvement in extracurricular activities.");
+  recommendations.push("Consider leadership roles in your extracurricular activities or starting new initiatives.");
+} else if (inputData.extracurricular_score >= 7) {
+  strengths.push("Strong participation in extracurricular activities.");
+  recommendations.push("Diversify your extracurricular involvement to gain a broader range of experiences.");
+} else if (inputData.extracurricular_score >= 5) {
+  weaknesses.push("Moderate extracurricular involvement.");
+  recommendations.push("Increase participation in extracurricular activities that align with your interests and career goals.");
+} else {
+  weaknesses.push("Limited extracurricular involvement.");
+  recommendations.push("Explore and join clubs, sports teams, or volunteer organizations to enhance your extracurricular profile.");
+}
+
 // Communication Skills
 if (inputData.communication_score >= 10) {
   strengths.push("Exceptional communication skills with professional fluency.");
@@ -113,6 +128,7 @@ if (inputData.internship_experience >= 8) {
 const maxScores = {
   average_test_score: 100,
   attendance_rate: 100,
+  extracurricular_score: 10,
   coding_skill_score: 10,
   communication_score: 10,
   leadership_score: 10,
@@ -120,23 +136,25 @@ const maxScores = {
 };
 
 const weights = {
-  average_test_score: 0.35, // 35% weight for academics
-  attendance_rate: 0.1,   // 10% weight for attendance
-  coding_skill_score: 0.2, // 20% weight for coding skills
-  communication_score: 0.15, // 15% weight for communication
-  leadership_score: 0.15,   // 15% weight for leadership
-  internship_experience: 0.05 // 5% weight for internships
+  average_test_score: 0.30,
+  attendance_rate: 0.10,
+  extracurricular_score: 0.10,
+  coding_skill_score: 0.15,
+  communication_score: 0.15,
+  leadership_score: 0.15,
+  internship_experience: 0.05
 };
 
 const penalties = {
-  lowAttendance: inputData.attendance_rate < 60 ? 5 : 0, // Subtract 5 points for very low attendance
-  lowCoding: inputData.coding_skill_score < 4 ? 5 : 0, // Subtract 5 points for very low coding skills
-  lowLeadership: inputData.leadership_score < 4 ? 5 : 0 // Subtract 5 points for very low leadership
+  lowAttendance: inputData.attendance_rate < 60 ? 5 : 0,
+  lowCoding: inputData.coding_skill_score < 4 ? 5 : 0,
+  lowLeadership: inputData.leadership_score < 4 ? 5 : 0
 };
 
 const rawScore = (
   (inputData.average_test_score / maxScores.average_test_score) * weights.average_test_score * 100 +
   (inputData.attendance_rate / maxScores.attendance_rate) * weights.attendance_rate * 100 +
+  (inputData.extracurricular_score / maxScores.extracurricular_score) * weights.extracurricular_score * 100 +
   (inputData.coding_skill_score / maxScores.coding_skill_score) * weights.coding_skill_score * 100 +
   (inputData.communication_score / maxScores.communication_score) * weights.communication_score * 100 +
   (inputData.leadership_score / maxScores.leadership_score) * weights.leadership_score * 100 +
@@ -221,3 +239,4 @@ ${initialInsights.recommendations.join('\n')}
     return NextResponse.json({ error: 'Failed to process prediction' }, { status: 500 })
   }
 }
+

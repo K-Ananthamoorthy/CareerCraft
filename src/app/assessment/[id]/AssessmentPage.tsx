@@ -1,4 +1,3 @@
-// app/assessment/[id]/AssessmentPage.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -15,8 +14,6 @@ interface Question {
   question_text: string
   question_type: string
   correct_answer: string
-  points: number
-  difficulty: string
   options: {
     id: string
     option_text: string
@@ -78,11 +75,34 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
-  const handleAnswerChange = (questionId: string, answer: string) => {
-    setAnswers((prevAnswers) => ({
-      ...prevAnswers,
-      [questionId]: answer,
+  // Convert option index to letter (0 -> 'a', 1 -> 'b', etc.)
+  const getLetterForOption = (options: Question['options'], optionId: string): string => {
+    const index = options.findIndex(opt => opt.id === optionId)
+    return String.fromCharCode(97 + index) // 97 is ASCII for 'a'
+  }
+
+  const handleAnswerChange = (questionId: string, optionId: string) => {
+    const question = assessment.questions.find(q => q.id === questionId)
+    if (!question) return
+
+    // Convert the selected option ID to its corresponding letter (a, b, c, d)
+    const letterAnswer = getLetterForOption(question.options, optionId)
+    
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: letterAnswer
     }))
+  }
+
+  const calculateScore = () => {
+    let correctCount = 0
+    assessment.questions.forEach((question) => {
+      // Direct comparison of letter answers
+      if (answers[question.id] === question.correct_answer) {
+        correctCount++
+      }
+    })
+    return correctCount // Returns number of correct answers (0-10)
   }
 
   const handleNextQuestion = () => {
@@ -103,34 +123,52 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
 
-      const score = calculateScore()
+      const correctAnswers = calculateScore()
+      const totalQuestions = assessment.questions.length
+
+      // Get the current attempt number
+      const { data: attempts } = await supabase
+        .from('assessment_attempts')
+        .select('attempt_number')
+        .eq('user_id', user.id)
+        .eq('assessment_id', assessment.id)
+        .order('attempt_number', { ascending: false })
+        .limit(1)
+
+      const currentAttempt = attempts?.[0]?.attempt_number || 1
+
+      // Update the current attempt with completion time
+      await supabase
+        .from('assessment_attempts')
+        .update({ completed_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('assessment_id', assessment.id)
+        .eq('attempt_number', currentAttempt)
+
+      // Store the results
       const { data, error } = await supabase
         .from('assessment_results')
         .insert({
           user_id: user.id,
           assessment_id: assessment.id,
-          score: score,
+          score: correctAnswers,
+          total_questions: totalQuestions,
+          correct_answers: correctAnswers,
           answers: answers,
-          completed: true,
+          attempt_number: currentAttempt,
+          completed: true
         })
         .select()
         .single()
 
       if (error) throw error
 
-      await supabase
-        .from('assessment_attempts')
-        .update({ completed_at: new Date().toISOString() })
-        .eq('user_id', user.id)
-        .eq('assessment_id', assessment.id)
-        .is('completed_at', null)
-
       toast({
         title: 'Assessment Submitted',
-        description: `Your score: ${score.toFixed(2)}/10`,
+        description: `Your score: ${correctAnswers}/${totalQuestions}`,
       })
 
-      router.push('/assessment')
+      router.push(`/assessment/${assessment.id}/results`)
     } catch (error) {
       console.error('Error submitting assessment:', error)
       toast({
@@ -141,20 +179,6 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const calculateScore = (): number => {
-    let totalPoints = 0
-    let earnedPoints = 0
-
-    assessment.questions.forEach((question) => {
-      totalPoints += question.points
-      if (answers[question.id] === question.correct_answer) {
-        earnedPoints += question.points
-      }
-    })
-
-    return (earnedPoints / totalPoints) * 10 // Scale to 0-10
   }
 
   if (!assessment || !assessment.questions || assessment.questions.length === 0) {
@@ -180,10 +204,12 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
             </h3>
             <p className="mb-4">{currentQuestion.question_text}</p>
             <RadioGroup
-              value={answers[currentQuestion.id] || ''}
+              value={answers[currentQuestion.id] ? 
+                currentQuestion.options[answers[currentQuestion.id].charCodeAt(0) - 97]?.id || '' : 
+                ''}
               onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
             >
-              {currentQuestion.options.map((option) => (
+              {currentQuestion.options.map((option, index) => (
                 <div key={option.id} className="flex items-center space-x-2">
                   <RadioGroupItem value={option.id} id={option.id} />
                   <Label htmlFor={option.id}>{option.option_text}</Label>

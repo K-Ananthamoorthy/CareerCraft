@@ -495,6 +495,10 @@ export default function StudentProfileForm() {
                   </div>
                   <div>
                     <h3 className="mb-2 text-lg font-semibold">Skills and Scores</h3>
+                    <p>Extracurricular Score: {formData.extracurricularScore.toFixed(2)}/10</p>
+                    <p>Coding Skill Score: {formData.codingSkillScore.toFixed(2)}/10</p>
+                    <p>Communication Score: {formData.communicationScore.toFixed(2)}/10</p>
+                    <p>Leadership Score: {formData.leadershipScore.toFixed(2)}/10</p>
                     {assessmentResults.map((result, index) => (
                       <p key={index}>{result.category}: {result.score.toFixed(2)}/10</p>
                     ))}

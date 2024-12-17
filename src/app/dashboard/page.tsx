@@ -1,4 +1,4 @@
-import EnhancedDashboard from '@/components/EnhancedDashboard'
+import EnhancedDashboard from '@/components/dashboard/Dashboard'
 
 export default function DashboardPage() {
   return (

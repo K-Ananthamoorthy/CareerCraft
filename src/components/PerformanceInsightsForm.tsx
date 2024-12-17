@@ -76,18 +76,36 @@ export default function PerformanceInsightsForm() {
           if (error) throw error
           setProfileData(profile)
 
-          // Pre-fill form data from profile
+          // Fetch assessment scores
+          const { data: assessmentScores, error: assessmentError } = await supabase
+            .from('assessment_results')
+            .select('assessment_id, score')
+            .eq('user_id', user.id)
+
+          if (assessmentError) throw assessmentError
+
+          const scoreMap: { [key: number]: string } = {
+            1: 'coding_skill_score',
+            2: 'extracurricular_score',
+            3: 'communication_score',
+            4: 'leadership_score'
+          }
+
+          const scores = assessmentScores.reduce((acc: Record<string, number>, { assessment_id, score }: { assessment_id: number, score: number }) => {
+            const key = scoreMap[assessment_id]
+            if (key) acc[key] = score
+            return acc
+          }, {})
+
+          // Pre-fill form data from profile and assessment scores
           if (profile) {
             setFormData(prevData => ({
               ...prevData,
               age: profile.age || 0,
               attendance_rate: profile.attendanceRate || 0,
               average_test_score: profile.averageTestScore || 0,
-              extracurricular_score: profile.extracurricularScore || 0,
-              coding_skill_score: profile.codingSkillScore || 0,
-              communication_score: profile.communicationScore || 0,
-              leadership_score: profile.leadershipScore || 0,
-              internship_experience: profile.internshipExperience || 0
+              internship_experience: profile.internshipExperience || 0,
+              ...scores
             }))
           }
         }
@@ -158,7 +176,8 @@ export default function PerformanceInsightsForm() {
           codingSkillScore: formData.coding_skill_score,
           communicationScore: formData.communication_score,
           leadershipScore: formData.leadership_score,
-          internshipExperience: formData.internship_experience
+          internshipExperience: formData.internship_experience,
+          extracurricularScore: formData.extracurricular_score
         })
         .eq('id', profileData.id)
 
@@ -182,15 +201,15 @@ export default function PerformanceInsightsForm() {
   }
 
   const formatPredictionScore = (score: number | string): string => {
-      const numScore = typeof score === 'string' ? parseFloat(score) : score
-      return isNaN(numScore) ? '0' : Math.min(Math.max(numScore, 0), 100).toString()
-    }
+    const numScore = typeof score === 'string' ? parseFloat(score) : score
+    return isNaN(numScore) ? '0' : Math.min(Math.max(numScore, 0), 100).toString()
+  }
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="text-2xl">Get Your Performance Insights</CardTitle>
-        <CardDescription>Fill in the form below to get personalized insights about your academic performance.</CardDescription>
+        <CardDescription>Review your performance data and get personalized insights.</CardDescription>
       </CardHeader>
       <CardContent>
         {profileData ? (
@@ -207,6 +226,7 @@ export default function PerformanceInsightsForm() {
                     onChange={handleChange}
                     required
                     className="w-full"
+                    disabled={['coding_skill_score', 'extracurricular_score', 'communication_score', 'leadership_score'].includes(key)}
                   />
                 </div>
               ))}
@@ -333,4 +353,3 @@ export default function PerformanceInsightsForm() {
     </Card>
   )
 }
-

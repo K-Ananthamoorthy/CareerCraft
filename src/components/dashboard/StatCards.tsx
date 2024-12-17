@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BookOpen, TrendingUp, Award, Calendar } from 'lucide-react'
+import { BookOpen, TrendingUp, Award, Calendar, Code, Users, Star, Briefcase } from 'lucide-react'
 
 interface StatCardsProps {
   dashboardData: {
@@ -8,6 +8,12 @@ interface StatCardsProps {
     averageScore: number
     studyStreak: number
     upcomingEvents: number
+    skills: {
+      extracurricularScore: number
+      codingSkillScore: number
+      communicationScore: number
+      leadershipScore: number
+    }
   } | null
 }
 
@@ -17,6 +23,10 @@ export default function StatCards({ dashboardData }: StatCardsProps) {
     { title: "Average Score", value: `${dashboardData?.averageScore}%`, icon: TrendingUp },
     { title: "Study Streak", value: `${dashboardData?.studyStreak} days`, icon: Award },
     { title: "Upcoming Events", value: dashboardData?.upcomingEvents, icon: Calendar },
+    { title: "Coding Skills", value: `${dashboardData?.skills.codingSkillScore.toFixed(1)}/10`, icon: Code },
+    { title: "Communication", value: `${dashboardData?.skills.communicationScore.toFixed(1)}/10`, icon: Users },
+    { title: "Extracurricular", value: `${dashboardData?.skills.extracurricularScore.toFixed(1)}/10`, icon: Star },
+    { title: "Leadership", value: `${dashboardData?.skills.leadershipScore.toFixed(1)}/10`, icon: Briefcase },
   ]
 
   return (
