@@ -71,7 +71,7 @@ export default function SavedExplanations() {
               </div>
             </CardHeader>
             <CardContent className="text-sm prose max-w-none dark:prose-invert sm:text-base">
-              <div dangerouslySetInnerHTML={{ __html: marked(explanation.content.toString()) }} />
+              <div dangerouslySetInnerHTML={{ __html: marked(explanation.content ? explanation.content.toString() : '') }} />
             </CardContent>
           </Card>
         ))
@@ -79,4 +79,5 @@ export default function SavedExplanations() {
     </div>
   )
 }
+
 
