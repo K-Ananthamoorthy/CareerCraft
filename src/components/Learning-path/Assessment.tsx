@@ -1,9 +1,10 @@
-'use client'
+"use client"
 
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
 
 interface QuizProps {
   quiz: {
@@ -24,19 +25,43 @@ interface QuizProps {
 export default function AssessmentComponent({ quiz, onComplete }: QuizProps) {
   const [userAnswers, setUserAnswers] = useState<number[]>(new Array(quiz.content.questions.length).fill(-1))
   const [showResults, setShowResults] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const { toast } = useToast()
 
   const handleAnswerChange = (questionIndex: number, answerIndex: number) => {
-    const newAnswers = [...userAnswers]
-    newAnswers[questionIndex] = answerIndex
-    setUserAnswers(newAnswers)
+    if (!isSubmitted) {
+      const newAnswers = [...userAnswers]
+      newAnswers[questionIndex] = answerIndex
+      setUserAnswers(newAnswers)
+    }
   }
 
   const handleSubmit = () => {
-    setShowResults(true)
-    const score = userAnswers.reduce((acc, answer, index) => 
-      answer === quiz.content.questions[index].correctAnswer ? acc + 1 : acc, 0
-    )
-    onComplete(score)
+    if (!isSubmitted) {
+      try {
+        setShowResults(true)
+        setIsSubmitted(true)
+        const score = userAnswers.reduce((acc, answer, index) => 
+          answer === quiz.content.questions[index].correctAnswer ? acc + 1 : acc, 0
+        )
+        const scorePercentage = Math.round((score / quiz.content.questions.length) * 100)
+        console.log('Quiz submitted. Score:', scorePercentage)
+        onComplete(scorePercentage)
+      } catch (error) {
+        console.error('Error submitting quiz:', error)
+        toast({
+          title: "Error",
+          description: "Failed to submit quiz. Please try again.",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  const calculateScore = () => {
+    const totalQuestions = quiz.content.questions.length
+    const correctAnswers = userAnswers.filter((answer, index) => answer === quiz.content.questions[index].correctAnswer).length
+    return `${correctAnswers} / ${totalQuestions}`
   }
 
   return (
@@ -49,6 +74,7 @@ export default function AssessmentComponent({ quiz, onComplete }: QuizProps) {
           <RadioGroup
             onValueChange={(value) => handleAnswerChange(questionIndex, parseInt(value))}
             value={userAnswers[questionIndex].toString()}
+            disabled={isSubmitted}
           >
             {question.options.map((option, optionIndex) => (
               <div key={optionIndex} className="flex items-center space-x-2">
@@ -67,9 +93,14 @@ export default function AssessmentComponent({ quiz, onComplete }: QuizProps) {
           )}
         </div>
       ))}
-      {!showResults && (
+      {!isSubmitted ? (
         <Button onClick={handleSubmit}>Submit Answers</Button>
+      ) : (
+        <div>
+          <p className="font-semibold">Quiz completed. Your score: {calculateScore()}</p>
+        </div>
       )}
     </div>
   )
 }
+
