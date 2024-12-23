@@ -163,9 +163,9 @@ export default function StudentProfileForm() {
       } catch (error) {
         console.error("Error in fetchProfileAndInsights:", error)
         toast({
-          title: "Error",
-          description: "Failed to fetch profile data. Please try again.",
-          variant: "destructive",
+          // title: "Error",
+          // description: "Failed to fetch profile data. Please try again.",
+          // variant: "destructive",
         })
       }
     }
@@ -497,8 +497,8 @@ export default function StudentProfileForm() {
                     <h3 className="mb-2 text-lg font-semibold">Skills and Scores</h3>
                     <p>Extracurricular Score: {formData.extracurricularScore?.toFixed(2) || "0.00"}/10</p>
                     <p>Coding Skill Score: {formData.codingSkillScore?.toFixed(2) || "0.00"}/10</p>
-                    <p>Communication Score: {formData.communicationScore.toFixed(2)}/10</p>
-                    <p>Leadership Score: {formData.leadershipScore.toFixed(2)}/10</p>
+                    <p>Communication Score: {formData.communicationScore?.toFixed(2)|| "0.00"}/10</p>
+                    <p>Leadership Score: {formData.leadershipScore?.toFixed(2)|| "0.00"}/10</p>
                     {assessmentResults.map((result, index) => (
                       <p key={index}>{result.category}: {result.score.toFixed(2)}/10</p>
                     ))}

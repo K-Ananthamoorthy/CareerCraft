@@ -23,6 +23,7 @@ interface LearningPath {
   duration: string;
   level: string;
   slug: string;
+  youtube_video_url: string;
 }
 
 interface Module {
@@ -150,7 +151,6 @@ export default function LearningPathPage({ params }: { params: { slug: string } 
       } else {
         setEnrollment(enrollmentData)
         if (enrollmentData) {
-          // Fetch user progress only if enrolled
           const { data: progressData, error: progressError } = await supabase
             .from('user_progress')
             .select('*')
@@ -163,7 +163,6 @@ export default function LearningPathPage({ params }: { params: { slug: string } 
             setUserProgress(progressData || [])
           }
 
-          // Fetch course videos only if enrolled
           const { data: videoData, error: videoError } = await supabase
             .from('course_videos')
             .select('module_id, video_url')
@@ -204,7 +203,6 @@ export default function LearningPathPage({ params }: { params: { slug: string } 
       console.error('Error enrolling:', error)
     } else {
       setEnrollment(data)
-      // Refresh the page to fetch user progress and course videos
       router.refresh()
     }
   }
@@ -315,76 +313,76 @@ export default function LearningPathPage({ params }: { params: { slug: string } 
   }
   
   const handleCourseCompletion = async () => {
-  setIsGeneratingCertificate(true);
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    if (!learningPath) {
-      throw new Error('Learning path information is missing');
-    }
-
-    console.log('Checking for existing certificate...');
-    const { data: existingCert, error: checkError } = await supabase
-      .from('certificates')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('learning_path_id', learningPath.id)
-      .single();
-
-    if (checkError) {
-      console.error('Error checking for existing certificate:', checkError);
-      if (checkError.code !== 'PGRST116') {
-        throw checkError;
+    setIsGeneratingCertificate(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
       }
+
+      if (!learningPath) {
+        throw new Error('Learning path information is missing');
+      }
+
+      console.log('Checking for existing certificate...');
+      const { data: existingCert, error: checkError } = await supabase
+        .from('certificates')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('learning_path_id', learningPath.id)
+        .single();
+
+      if (checkError) {
+        console.error('Error checking for existing certificate:', checkError);
+        if (checkError.code !== 'PGRST116') {
+          throw checkError;
+        }
+      }
+
+      if (existingCert) {
+        console.log('Existing certificate found:', existingCert);
+        router.push(`/certificate/${existingCert.id}`);
+        return;
+      }
+
+      console.log('Creating new certificate...');
+      const { data: newCert, error: createError } = await supabase
+        .from('certificates')
+        .insert({
+          user_id: user.id,
+          learning_path_id: learningPath.id,
+          issued_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating certificate:', createError);
+        throw createError;
+      }
+
+      if (!newCert) {
+        throw new Error('Failed to create certificate: No data returned');
+      }
+
+      console.log('New certificate created:', newCert);
+      toast({
+        title: "Certificate Generated",
+        description: "Your certificate has been created successfully!",
+      });
+
+      router.push(`/certificate/${newCert.id}`);
+    } catch (error) {
+      console.error('Error in handleCourseCompletion:', error);
+      toast({
+        title: "Certificate Generation Failed",
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingCertificate(false);
     }
-
-    if (existingCert) {
-      console.log('Existing certificate found:', existingCert);
-      router.push(`/certificate/${existingCert.id}`);
-      return;
-    }
-
-    console.log('Creating new certificate...');
-    const { data: newCert, error: createError } = await supabase
-      .from('certificates')
-      .insert({
-        user_id: user.id,
-        learning_path_id: learningPath.id,
-        issued_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (createError) {
-      console.error('Error creating certificate:', createError);
-      throw createError;
-    }
-
-    if (!newCert) {
-      throw new Error('Failed to create certificate: No data returned');
-    }
-
-    console.log('New certificate created:', newCert);
-    toast({
-      title: "Certificate Generated",
-      description: "Your certificate has been created successfully!",
-    });
-
-    router.push(`/certificate/${newCert.id}`);
-  } catch (error) {
-    console.error('Error in handleCourseCompletion:', error);
-    toast({
-      title: "Certificate Generation Failed",
-      description: error instanceof Error ? error.message : 'An unknown error occurred',
-      variant: "destructive",
-    });
-  } finally {
-    setIsGeneratingCertificate(false);
-  }
-};
+  };
 
   const calculateProgress = () => {
     if (modules.length === 0) return 0
@@ -504,7 +502,9 @@ export default function LearningPathPage({ params }: { params: { slug: string } 
                 <li>Industry best practices and tools</li>
                 <li>Real-world problem-solving techniques</li>
               </ul>
-              <YouTubeEmbed videoId="dQw4w9WgXcQ" title="Course Introduction" />
+              {learningPath.youtube_video_url && (
+                <YouTubeEmbed videoId={learningPath.youtube_video_url} title="Course Introduction" />
+              )}
             </div>
             <div>
               <h3 className="mb-4 text-xl font-semibold">This course includes:</h3>

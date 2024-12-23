@@ -1,13 +1,8 @@
-// app/assessment/[id]/page.tsx
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import AssessmentPage from './AssessmentPage'
 import { Metadata } from 'next'
-
-interface Params {
-  id: string
-}
 
 interface Assessment {
   id: string
@@ -95,11 +90,9 @@ async function checkAssessmentEligibility(assessmentId: string) {
 
   const lastAttempt = attempts?.[0]
   if (lastAttempt && !lastAttempt.completed_at) {
-    // There's an incomplete attempt, allow continuing
     return true
   }
 
-  // Start a new attempt
   const { error: newAttemptError } = await supabase
     .from('assessment_attempts')
     .insert({
@@ -116,7 +109,11 @@ async function checkAssessmentEligibility(assessmentId: string) {
   return true
 }
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+type MetadataProps = {
+  params: { id: string }
+}
+
+export async function generateMetadata({ params }: MetadataProps): Promise<Metadata> {
   const assessment = await getAssessment(params.id)
   return {
     title: assessment ? `${assessment.title} Assessment` : 'Assessment Not Found',
@@ -124,7 +121,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   }
 }
 
-export default async function Page({ params }: { params: Params }) {
+type PageProps = {
+  params: { id: string }
+  searchParams?: { [key: string]: string | string[] | undefined }
+}
+
+export default async function Page({ params }: PageProps) {
   const assessment = await getAssessment(params.id)
 
   if (!assessment) {

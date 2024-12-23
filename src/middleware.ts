@@ -10,7 +10,7 @@ export async function middleware(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const publicRoutes = ['/about', '/privacy', '/terms', '/contact']
+  const publicRoutes = ['/about', '/privacy', '/terms', '/contact','/admin']
 
   // Check if the route is public
   if (publicRoutes.some((route) => req.nextUrl.pathname.startsWith(route))) {

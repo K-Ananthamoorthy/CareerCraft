@@ -9,15 +9,19 @@ import { Label } from '@/components/ui/label'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from '@/hooks/use-toast'
 
+interface Option {
+  id: string
+  option_text: string
+}
+
 interface Question {
   id: string
   question_text: string
   question_type: string
   correct_answer: string
-  options: {
-    id: string
-    option_text: string
-  }[]
+  points: number
+  difficulty: string
+  options: Option[]
 }
 
 interface Assessment {
@@ -44,7 +48,7 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
   const supabase = createClientComponentClient()
 
   useEffect(() => {
-    if (assessment && assessment.duration) {
+    if (assessment?.duration) {
       const totalSeconds = parseDuration(assessment.duration)
       setTimeLeft(totalSeconds)
 
@@ -75,17 +79,15 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
-  // Convert option index to letter (0 -> 'a', 1 -> 'b', etc.)
-  const getLetterForOption = (options: Question['options'], optionId: string): string => {
+  const getLetterForOption = (options: Option[], optionId: string): string => {
     const index = options.findIndex(opt => opt.id === optionId)
-    return String.fromCharCode(97 + index) // 97 is ASCII for 'a'
+    return String.fromCharCode(97 + index)
   }
 
   const handleAnswerChange = (questionId: string, optionId: string) => {
     const question = assessment.questions.find(q => q.id === questionId)
     if (!question) return
 
-    // Convert the selected option ID to its corresponding letter (a, b, c, d)
     const letterAnswer = getLetterForOption(question.options, optionId)
     
     setAnswers(prev => ({
@@ -94,15 +96,14 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
     }))
   }
 
-  const calculateScore = () => {
+  const calculateScore = (): number => {
     let correctCount = 0
     assessment.questions.forEach((question) => {
-      // Direct comparison of letter answers
       if (answers[question.id] === question.correct_answer) {
         correctCount++
       }
     })
-    return correctCount // Returns number of correct answers (0-10)
+    return correctCount
   }
 
   const handleNextQuestion = () => {
@@ -126,7 +127,6 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
       const correctAnswers = calculateScore()
       const totalQuestions = assessment.questions.length
 
-      // Get the current attempt number
       const { data: attempts } = await supabase
         .from('assessment_attempts')
         .select('attempt_number')
@@ -137,7 +137,6 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
 
       const currentAttempt = attempts?.[0]?.attempt_number || 1
 
-      // Update the current attempt with completion time
       await supabase
         .from('assessment_attempts')
         .update({ completed_at: new Date().toISOString() })
@@ -145,8 +144,7 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
         .eq('assessment_id', assessment.id)
         .eq('attempt_number', currentAttempt)
 
-      // Store the results
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('assessment_results')
         .insert({
           user_id: user.id,
@@ -158,8 +156,6 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
           attempt_number: currentAttempt,
           completed: true
         })
-        .select()
-        .single()
 
       if (error) throw error
 
@@ -181,7 +177,7 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
     }
   }
 
-  if (!assessment || !assessment.questions || assessment.questions.length === 0) {
+  if (!assessment?.questions?.length) {
     return <div>Loading assessment or no questions available...</div>
   }
 
@@ -209,7 +205,7 @@ export default function AssessmentPage({ assessment }: AssessmentPageProps) {
                 ''}
               onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
             >
-              {currentQuestion.options.map((option, index) => (
+              {currentQuestion.options.map((option) => (
                 <div key={option.id} className="flex items-center space-x-2">
                   <RadioGroupItem value={option.id} id={option.id} />
                   <Label htmlFor={option.id}>{option.option_text}</Label>
