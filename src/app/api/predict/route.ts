@@ -201,7 +201,7 @@ ${initialInsights}
       messages: [
         { role: "user", content: personalizedPrompt }
       ],
-      model: "llama-3.1-70b-versatile",
+      model: "llama-3.3-70b-versatile",
     })
 
     return chatCompletion.choices[0]?.message?.content || ''
