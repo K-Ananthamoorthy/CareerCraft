@@ -32,7 +32,7 @@ export default function CreatePost({ user }: CreatePostProps) {
 
   const enhancePostWithAI = async (content: string) => {
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const result = await model.generateContent(
         `Enhance this social media post to make it more engaging and appealing. Correct any grammatical errors, improve vocabulary, and enhance sentence structure. Add relevant emojis where appropriate. Keep the original meaning and tone. Ensure the output is clean, without asterisks or unwanted characters. Format the response as a single, well-structured paragraph:
 

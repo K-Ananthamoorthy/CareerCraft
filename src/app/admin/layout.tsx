@@ -34,6 +34,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Settings className="w-5 h-5 mr-2" />
             Career-path
           </Link>
+          <Link href="/admin/profile" className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-200">
+            <Settings className="w-5 h-5 mr-2" />
+            Analysis
+          </Link>
         </nav>
       </aside>
       <main className="flex-1 p-8 overflow-y-auto">

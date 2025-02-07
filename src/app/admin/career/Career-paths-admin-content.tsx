@@ -312,7 +312,7 @@ export function CareerPathsAdminContent() {
         ))}
       </div>
 
-      <Dialog open={isEditMode} onOpenChange={(open) => !open && setIsEditMode(false)}>
+      <Dialog open={isEditMode} onOpenChange={(open: boolean) => !open && setIsEditMode(false)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedCareer ? 'Edit' : 'Add'} Career Path</DialogTitle>

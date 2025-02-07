@@ -30,6 +30,7 @@
     "@supabase/supabase-js": "^2.45.6",
     "@types/react-pdf": "^6.2.0",
     "@xenova/transformers": "^2.17.2",
+    "chart.js": "^4.4.7",
     "chromadb": "^1.9.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
